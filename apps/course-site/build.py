@@ -1,0 +1,41 @@
+# -*- coding: utf-8 -*-
+from pathlib import Path
+import json,shutil
+from html import escape
+from shared import CSS,COMMON,js2,js3
+ROOT=Path(__file__).resolve().parents[2]; SITE=Path(__file__).parent/'site'
+PARTS={'hami':'第一部分 · HAMi 专题','koordinator':'第二部分 · Koordinator 专题','practice':'第三部分 · 联合实践'}
+def page(title,body,script=''):
+ return '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+' · ReplaceU</title><style>'+CSS+'</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">三部分课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main>'+body+'</main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>'+COMMON+'\n'+script+'</script></html>'
+def build():
+ SITE.mkdir(exist_ok=True);(SITE/'lessons').mkdir(exist_ok=True);(SITE/'reference').mkdir(exist_ok=True)
+ manifest=json.loads((ROOT/'courses/catalog.json').read_text());cards=''
+ for part,label in PARTS.items():
+  entries=[d for d in manifest if d['part']==part]
+  cards+='<section id="'+part+'"><h2>'+label+'</h2>'
+  for d in entries:cards+='<h3><a href="lessons/'+d['slug']+'.html">'+d['number']+' · '+d['title']+'</a></h3><p>'+d['summary']+'</p>'
+  cards+='</section>'
+ index='<p class="kicker">三条清晰主线</p><h1>先 HAMi，再 Koordinator，<br>最后把知识用于实践。</h1><p>第一部分只讲 HAMi；第二部分只讲 Koordinator；第三部分把前两部分连到实际服务与源码。每课先读 Archify 主图，再判断、操作和复述。</p><nav><a href="#hami">HAMi</a><a href="#koordinator">Koordinator</a><a href="#practice">联合实践</a></nav>'+cards+'<section><h2>服务状态与学习边界</h2><p id="live">读取中…</p><button onclick="live()">刷新</button><p>课程运行在服务器。GPU 实验是明确标记的模拟；实践项目使用真实 Kubernetes/Koordinator 与 CPU 工作负载，不声称完成真实 NVIDIA 隔离验证。</p><a href="/">打开实践工作台</a></section>'
+ for name in ['index.html','catalog.html']:(SITE/name).write_text(page('课程目录',index))
+ for entry in manifest:
+  d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
+  body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p><details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a></nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
+  script=''
+  if slug=='practice-01':
+   from practice_intro import BODY,SCRIPT
+   body=BODY.replace('第 1 课 / 3','第三部分 · 第 1 课').replace('hami-roles.html','practice-flow.html');script=SCRIPT
+  else:body+='<section id="explain"><h2>逐步讲解</h2>'+d['body']+'</section>'
+  if slug=='hami-02':script+=js3
+  if slug=='practice-02':script+=js2
+  if d['choices']:
+   body+='<section id="check"><h2>先判断，再用自己的话解释</h2><div id="checkQuiz" class="choices">'+''.join('<button>'+c+'</button>' for c in d['choices'])+'<output aria-live="polite">选择一个答案。</output></div><textarea data-note="'+slug+'" placeholder="沿图复述：输入是什么，谁决定，结果如何验证？" rows="4"></textarea><p>把答案发回对话，我会先核对你的理解，再继续下一步。</p></section>'
+   script+='quiz("checkQuiz",'+str(d['correct'])+','+json.dumps(d['feedback'],ensure_ascii=False)+');'
+  body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
+  (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview']:
+  source=ROOT/'diagrams'/name/'diagram.html'
+  if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
+ for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-02'}.items():
+  (SITE/'lessons'/(old+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url='+new+'.html"><a href="'+new+'.html">课程已按三部分重组，继续学习</a>')
+ print('Built',len(manifest),'lessons in',len(PARTS),'parts')
+if __name__=='__main__':build()

@@ -1,0 +1,15 @@
+{
+  "part": "hami",
+  "number": "01",
+  "slug": "hami-01",
+  "diagram": "hami-overview",
+  "title": "HAMi 的组件如何配合",
+  "summary": "先认识完整 HAMi，再区分调度和运行约束。",
+  "body": "<p>HAMi 解决异构设备共享和管理问题。今天只沿传统 NVIDIA 接入链路走一遍：一个 Pod 请求设备后，如何到达真正执行的应用。</p><h2>先读图的前半段</h2><p>Webhook 在准入阶段改写符合条件的 Pod，设置配置的 schedulerName。对应的 kube-scheduler 与 HAMi scheduler extender 配合，过滤节点、选择设备并完成绑定。Webhook 不负责选择 GPU。</p><h2>再读图的后半段</h2><p>绑定之后，节点侧 kubelet 与设备插件参与分配，把设备与运行所需配置交给容器。HAMi-core 是应用进程使用的用户态库，在支持的 CUDA 调用路径中约束预算；它不是另一台调度器。</p><h2>拿一份 4 GiB 申请串起来</h2><p>申请 4 GiB → 选择具有足够容量的设备 → 交付该设备与预算 → 验证运行库加载 → 运行负载验证限制。节点登记容量与 Pod 分配注解都只是中间证据。</p>",
+  "choices": [
+    "Webhook 直接挑选 GPU",
+    "Extender 参与设备分配，HAMi-core 参与运行约束"
+  ],
+  "correct": 1,
+  "feedback": "把准入、分配、节点交付、运行约束分开判断。"
+}

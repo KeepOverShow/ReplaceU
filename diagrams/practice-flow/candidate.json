@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "第一课：从申请到运行的知识主线",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/architecture-hami-roles-20261024-191500/hami-roles.html",
+    "views": [
+      {
+        "id": "allocation",
+        "label": "先看申请与分配",
+        "focus": [
+          "request",
+          "schedule"
+        ],
+        "note": "分配注解属于②，不证明⑤生效。"
+      },
+      {
+        "id": "delivery",
+        "label": "再看配置交付",
+        "focus": [
+          "handoff",
+          "application"
+        ],
+        "note": "配置交付不等于实际加载和执行成功。"
+      },
+      {
+        "id": "runtime",
+        "label": "最后看运行约束",
+        "focus": [
+          "application",
+          "core",
+          "gpu"
+        ],
+        "note": "假定运行库已加载；超限请求在⑤拒绝。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "request",
+      "type": "external",
+      "label": "① 申请预算",
+      "sublabel": "Pod：4 GiB / 25%",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        210,
+        82
+      ]
+    },
+    {
+      "id": "schedule",
+      "type": "backend",
+      "label": "② Koordinator 分配",
+      "sublabel": "DeviceShare：选节点和卡",
+      "pos": [
+        40,
+        180
+      ],
+      "size": [
+        210,
+        82
+      ]
+    },
+    {
+      "id": "handoff",
+      "type": "backend",
+      "label": "③ 节点侧交付配置",
+      "sublabel": "设备、预算、运行库",
+      "pos": [
+        40,
+        320
+      ],
+      "size": [
+        210,
+        82
+      ]
+    },
+    {
+      "id": "application",
+      "type": "external",
+      "label": "④ CUDA 应用发起调用",
+      "sublabel": "准备完成后才开始执行",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        210,
+        82
+      ]
+    },
+    {
+      "id": "core",
+      "type": "security",
+      "label": "⑤ HAMi-core 检查",
+      "sublabel": "已加载时：超限请求拒绝",
+      "pos": [
+        40,
+        600
+      ],
+      "size": [
+        210,
+        82
+      ]
+    },
+    {
+      "id": "gpu",
+      "type": "cloud",
+      "label": "⑥ NVIDIA GPU 执行",
+      "sublabel": "预算内调用仍需底层成功",
+      "pos": [
+        40,
+        740
+      ],
+      "size": [
+        210,
+        82
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "step-1",
+      "from": "request",
+      "to": "schedule",
+      "label": "提交需求",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-2",
+      "from": "schedule",
+      "to": "handoff",
+      "label": "分配经 API 传递",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-3",
+      "from": "handoff",
+      "to": "application",
+      "label": "配置启动环境",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-4",
+      "from": "application",
+      "to": "core",
+      "label": "支持的调用路径",
+      "variant": "security"
+    },
+    {
+      "id": "step-5",
+      "from": "core",
+      "to": "gpu",
+      "label": "预算内，经驱动链路",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "本图范围",
+      "items": [
+        "Koordinator + HAMi-core 概念主线；不表示 Mac 已运行真实 NVIDIA CUDA。",
+        "节点交付合并 API Server、kubelet、NRI/运行时链路；调度器不直接注入运行库。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "不能跳过的条件",
+      "items": [
+        "③配置成功不能推出⑤已加载且有效；仍需检查进程和负载。",
+        "⑤在支持的路径和库生效前提下检查；超限拒绝，不进入⑥。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "两个名字的位置",
+      "items": [
+        "HAMi 是完整项目，HAMi-core 是运行库。",
+        "传统 HAMi 调度扩展是另一条接入路径，不在②之后再串一个调度器。"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "官方依据",
+      "items": [
+        "https://koordinator.sh/zh-Hans/docs/v1.6/user-manuals/device-scheduling-gpu-share-with-hami",
+        "https://project-hami.io/docs/core-concepts/ecosystem-integrations",
+        "https://github.com/Project-HAMi/HAMi-core"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "part": "koordinator",
+  "number": "01",
+  "slug": "koordinator-01",
+  "diagram": "koord-overview",
+  "title": "Koordinator 的组件与职责",
+  "summary": "只学习 Koordinator 的观测、调度和治理。",
+  "body": "<p>Koordinator 在 Kubernetes 上增加资源编排和混部能力。先记三个组件：koord-manager、koord-scheduler、koordlet。</p><h2>按“谁决定、谁执行”读图</h2><p>koord-scheduler 基于调度框架和插件做放置决策；koordlet 在节点侧采集指标并执行节点资源与 QoS 治理；koord-manager 运行控制器与 Webhook。组件主要通过 Kubernetes API 对象和配置协作。</p><h2>request 和真实负载不同</h2><p>两个节点声明的 request 相同，真实 CPU 使用量可能不同。负载感知调度利用采集指标辅助选择节点，但指标会延迟，仍要结合可分配资源、阈值和策略。</p><h2>先学核心，再学扩展</h2><p>接下来依次学习 QoS 分类、负载感知、资源超卖、DeviceShare。每个专题都只分析 Koordinator；联合项目放到第三部分。</p><p>架构依据使用官方 next 文档；具体插件字段需按部署版本核对，不能假定当前环境具备所有新版本能力。</p>",
+  "choices": [
+    "koordlet 负责给所有 Pod 选节点",
+    "koord-scheduler 负责调度，koordlet 负责节点侧治理"
+  ],
+  "correct": 1,
+  "feedback": "区分集群放置决策和节点资源治理。"
+}

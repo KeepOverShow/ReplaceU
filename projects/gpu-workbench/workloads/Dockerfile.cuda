@@ -1,0 +1,6 @@
+# Candidate for a real NVIDIA node; not executed on this Intel Mac.
+FROM pytorch/pytorch:2.3.1-cuda11.8-cudnn8-runtime
+COPY worker.py /app/worker.py
+ENV PYTHONDONTWRITEBYTECODE=1
+USER 10001:10001
+ENTRYPOINT ["python3","-u","/app/worker.py"]

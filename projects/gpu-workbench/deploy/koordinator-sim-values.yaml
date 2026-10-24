@@ -1,0 +1,30 @@
+imageRepositoryHost: ghcr.io
+# Local experiment only. No physical GPU; do not enable NVIDIA runtime injection.
+featureGates: EnableSyncGPUSharedResource=true
+manager:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: '1', memory: 768Mi}
+scheduler:
+  replicas: 1
+  resources:
+    requests: {cpu: 100m, memory: 192Mi}
+    limits: {cpu: '1', memory: 768Mi}
+descheduler:
+  replicas: 0
+koordlet:
+  features: 'Accelerators=false,GPUEnvInject=false,BECPUEvict=true,BEMemoryEvict=true,CgroupReconcile=true'
+  hostDirs:
+    kubeletConfigDir: /var/lib/rancher/k3s/agent/etc
+    kubeletLibDir: /var/lib/kubelet
+# Prevent the physical-device reporter from overwriting the synthetic Device CR.
+deviceDaemon:
+  nodeAffinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: workbench.local/physical-gpu
+            operator: In
+            values: ['true']

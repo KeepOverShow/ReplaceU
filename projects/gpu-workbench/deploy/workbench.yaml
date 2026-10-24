@@ -1,0 +1,99 @@
+# Optional in-cluster deployment after building gpu-workbench:local into the node.
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: gpu-workbench, namespace: gpu-workbench}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: gpu-workbench, namespace: gpu-workbench}
+rules:
+- apiGroups: ['batch']
+  resources: ['jobs']
+  verbs: ['get', 'list', 'watch', 'create', 'update', 'patch']
+- apiGroups: ['']
+  resources: ['pods']
+  verbs: ['get', 'list', 'watch', 'delete']
+- apiGroups: ['']
+  resources: ['pods/log', 'events']
+  verbs: ['get', 'list']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: gpu-workbench, namespace: gpu-workbench}
+subjects:
+- kind: ServiceAccount
+  name: gpu-workbench
+  namespace: gpu-workbench
+roleRef: {kind: Role, name: gpu-workbench, apiGroup: rbac.authorization.k8s.io}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata: {name: gpu-workbench-devices}
+rules:
+- apiGroups: ['scheduling.koordinator.sh']
+  resources: ['devices']
+  verbs: ['get', 'list']
+- apiGroups: ['']
+  resources: ['namespaces']
+  resourceNames: ['gpu-workbench']
+  verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata: {name: gpu-workbench-devices}
+subjects:
+- kind: ServiceAccount
+  name: gpu-workbench
+  namespace: gpu-workbench
+roleRef: {kind: ClusterRole, name: gpu-workbench-devices, apiGroup: rbac.authorization.k8s.io}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: gpu-workbench, namespace: gpu-workbench}
+spec:
+  selector: {app: gpu-workbench}
+  ports: [{port: 8787, targetPort: 8787, name: http}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: gpu-workbench, namespace: gpu-workbench}
+spec:
+  replicas: 1
+  serviceName: gpu-workbench
+  selector:
+    matchLabels: {app: gpu-workbench}
+  template:
+    metadata:
+      labels: {app: gpu-workbench}
+    spec:
+      serviceAccountName: gpu-workbench
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: workbench
+        image: gpu-workbench:local
+        imagePullPolicy: Never
+        args: ['-mode', 'k8s-sim', '-listen', '0.0.0.0:8787', '-data', '/data']
+        ports: [{containerPort: 8787}]
+        resources:
+          requests: {cpu: 100m, memory: 128Mi}
+          limits: {cpu: '1', memory: 512Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: ['ALL']}
+        readinessProbe:
+          httpGet: {path: /readyz, port: 8787}
+        livenessProbe:
+          httpGet: {path: /healthz, port: 8787}
+        volumeMounts: [{name: state, mountPath: /data}]
+  volumeClaimTemplates:
+  - metadata: {name: state}
+    spec:
+      accessModes: ['ReadWriteOnce']
+      resources:
+        requests: {storage: 1Gi}

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Koordinator：观测、调度与节点治理",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/architecture-koord-overview-20261024/diagram.html"
+  },
+  "components": [
+    {
+      "id": "pod",
+      "type": "external",
+      "label": "① Pod 与策略",
+      "sublabel": "资源申请及 QoS 意图",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "scheduler",
+      "type": "backend",
+      "label": "② koord-scheduler",
+      "sublabel": "插件扩展调度决策",
+      "pos": [
+        40,
+        180
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "③ Kubernetes API",
+      "sublabel": "保存分配与治理对象",
+      "pos": [
+        40,
+        320
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "node",
+      "type": "backend",
+      "label": "④ koordlet",
+      "sublabel": "节点采集与 QoS 管理",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        240,
+        82
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "step-0",
+      "from": "pod",
+      "to": "scheduler",
+      "label": "进入指定调度器",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-1",
+      "from": "scheduler",
+      "to": "api",
+      "label": "读取状态并写入结果",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-2",
+      "from": "api",
+      "to": "node",
+      "label": "节点观察相关配置",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "读图边界与依据",
+      "items": [
+        "这是职责地图，不表示 koordlet 直接接收调度器 RPC。",
+        "koord-manager 负责控制器与 Webhook；通过 API 对象参与治理。",
+        "koordlet 采集节点指标，调度插件可据此做负载感知决策。",
+        "https://koordinator.sh/docs/next/architecture/overview"
+      ]
+    }
+  ]
+}

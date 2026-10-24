@@ -1,0 +1,15 @@
+{
+  "part": "practice",
+  "number": "02",
+  "slug": "practice-02",
+  "diagram": "practice-flow",
+  "title": "联合实践：资源碎片与等待",
+  "summary": "同样剩余 6 GiB，分布不同结果不同。",
+  "body": "<p>两张卡容量各 8 GiB。如果各占 5 GiB，每张只剩 3 GiB。一个需要同卡 4 GiB 的任务不能跨卡拼接容量，因此等待。</p><p>沿主图定位：这次失败发生在“分配”阶段，应用尚未进入运行库约束阶段。</p><button id=\"fragmented\">各占 5 GiB，再申请 4 GiB</button><button id=\"packed\">一张占满，另一张占 2 GiB</button><button id=\"shared\">已有 2 GiB，再申请 2 GiB</button><output id=\"scheduleResult\">等待实验请求。</output><pre id=\"scheduleRaw\" hidden></pre><p>这里使用 first-fit 教学模型，真实 Koordinator 还涉及插件过滤、策略和打分。</p>",
+  "choices": [
+    "总量足够就能分配",
+    "必须有一张卡能容纳完整请求"
+  ],
+  "correct": 1,
+  "feedback": "单卡条件不满足时，总余量足够仍会等待。"
+}

@@ -1,0 +1,10 @@
+.cache/
+.runtime/
+.tools/
+.superpowers/
+*.db
+*.db-shm
+*.db-wal
+__pycache__/
+*.pyc
+node_modules/

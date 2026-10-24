@@ -1,0 +1,6 @@
+.git
+.cache
+.runtime
+.tools
+.superpowers
+**/__pycache__

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "HAMi：从 Pod 到运行约束",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/architecture-hami-overview-20261024/diagram.html"
+  },
+  "components": [
+    {
+      "id": "pod",
+      "type": "external",
+      "label": "① Pod 申请",
+      "sublabel": "设备数、显存、计算份额",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "webhook",
+      "type": "backend",
+      "label": "② HAMi Webhook",
+      "sublabel": "设置调度入口",
+      "pos": [
+        40,
+        180
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "scheduler",
+      "type": "backend",
+      "label": "③ 调度器与 Extender",
+      "sublabel": "过滤节点并选择设备",
+      "pos": [
+        40,
+        320
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "plugin",
+      "type": "backend",
+      "label": "④ 节点设备插件",
+      "sublabel": "通过 kubelet 交付配置",
+      "pos": [
+        40,
+        460
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "core",
+      "type": "security",
+      "label": "⑤ HAMi-core",
+      "sublabel": "应用内支持的 CUDA 路径",
+      "pos": [
+        40,
+        600
+      ],
+      "size": [
+        240,
+        82
+      ]
+    },
+    {
+      "id": "driver",
+      "type": "cloud",
+      "label": "⑥ CUDA Driver / GPU",
+      "sublabel": "预算内继续执行",
+      "pos": [
+        40,
+        740
+      ],
+      "size": [
+        240,
+        82
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "step-0",
+      "from": "pod",
+      "to": "webhook",
+      "label": "提交并进入准入",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-1",
+      "from": "webhook",
+      "to": "scheduler",
+      "label": "按 schedulerName 调度",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-2",
+      "from": "scheduler",
+      "to": "plugin",
+      "label": "绑定后由节点接手",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-3",
+      "from": "plugin",
+      "to": "core",
+      "label": "配置加载成功后",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-4",
+      "from": "core",
+      "to": "driver",
+      "label": "预算内继续",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "读图边界与依据",
+      "items": [
+        "传统 NVIDIA 方案的概念主线；API Server 与 kubelet 链路合并说明。",
+        "调度器与 Extender 配合，不是两个独立调度器串联。",
+        "HAMi-core 是用户态约束；配置存在不能证明库已加载。",
+        "https://project-hami.io/docs/v2.7.0/core-concepts/architecture"
+      ]
+    }
+  ]
+}

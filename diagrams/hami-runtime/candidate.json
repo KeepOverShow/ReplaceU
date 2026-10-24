@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HAMi-core 如何拒绝一次超额显存申请",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "projects/hami-course/.archify/sequence-hami-runtime-20261024/hami-runtime.html"
+  },
+  "participants": [
+    {
+      "id": "app",
+      "type": "external",
+      "label": "CUDA 应用",
+      "sublabel": "提出内存申请"
+    },
+    {
+      "id": "core",
+      "type": "security",
+      "label": "HAMi-core",
+      "sublabel": "容器内预算检查"
+    },
+    {
+      "id": "driver",
+      "type": "backend",
+      "label": "CUDA Driver",
+      "sublabel": "执行获准的申请"
+    }
+  ],
+  "messages": [
+    {
+      "id": "first",
+      "from": "app",
+      "to": "core",
+      "y": 160,
+      "label": "申请 2 GiB",
+      "variant": "emphasis",
+      "note": "教学预算 4 GiB，当前使用 0 GiB"
+    },
+    {
+      "id": "allow",
+      "from": "core",
+      "to": "driver",
+      "y": 230,
+      "label": "预算内，转交调用",
+      "variant": "security"
+    },
+    {
+      "id": "allocated",
+      "from": "driver",
+      "to": "core",
+      "y": 275,
+      "label": "底层申请成功",
+      "variant": "return"
+    },
+    {
+      "id": "ok",
+      "from": "core",
+      "to": "app",
+      "y": 320,
+      "label": "返回成功",
+      "variant": "return",
+      "note": "示例假定底层成功，已用预算成为 2 GiB"
+    },
+    {
+      "id": "over",
+      "from": "app",
+      "to": "core",
+      "y": 390,
+      "label": "再申请 3 GiB",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reject",
+      "from": "core",
+      "to": "app",
+      "y": 435,
+      "label": "超过剩余预算，拒绝",
+      "variant": "security",
+      "note": "这条超限路径不转交 Driver"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "这是运行时示意",
+      "items": [
+        "已假定分配及库加载完成；调度侧并未参与每次 CUDA 调用。",
+        "数字为教学示例，页面实验使用整数账本，不执行 CUDA。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "阅读边界",
+      "items": [
+        "只展开显存分配的成功与超额分支；未画出释放、并发及底层失败。",
+        "HAMi-core 是用户态软件约束，不等同于硬件分区或安全沙箱。"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "官方依据",
+      "items": [
+        "https://github.com/Project-HAMi/HAMi-core",
+        "https://project-hami.io/docs/core-concepts/gpu-virtualization"
+      ]
+    }
+  ]
+}

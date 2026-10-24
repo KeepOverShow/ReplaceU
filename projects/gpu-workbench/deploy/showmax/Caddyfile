@@ -1,0 +1,23 @@
+{
+    auto_https disable_redirects
+}
+{$WORKBENCH_DOMAIN} {
+    tls {
+        issuer acme {
+            dir https://acme-v02.api.letsencrypt.org/directory
+            disable_http_challenge
+        }
+    }
+    @courseRoot path /course
+    redir @courseRoot /course/ 308
+    handle_path /course/* {
+        reverse_proxy 127.0.0.1:18900
+    }
+    handle {
+        reverse_proxy 127.0.0.1:18787
+    }
+}
+http://127.0.0.1:18888 {
+    bind 127.0.0.1
+    reverse_proxy 127.0.0.1:18787
+}

@@ -1,0 +1,10 @@
+{$COURSE_DOMAIN} {
+    @courseRoot path /course
+    redir @courseRoot /course/ 308
+    handle_path /course/* {
+        reverse_proxy 127.0.0.1:18900
+    }
+    handle {
+        reverse_proxy 127.0.0.1:18787
+    }
+}
