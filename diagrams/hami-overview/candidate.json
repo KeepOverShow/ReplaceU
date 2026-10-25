@@ -2,10 +2,10 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "HAMi：从 Pod 到运行约束",
+    "title": "HAMi 第一课：从分配记录到运行证据",
     "locale": "zh-CN",
     "quality_profile": "showcase",
-    "output": ".archify/architecture-hami-overview-20261024/diagram.html"
+    "output": ".archify/architecture-hami-evidence-20261025/diagram.html"
   },
   "components": [
     {
@@ -132,6 +132,15 @@
   ],
   "cards": [
     {
+      "dot": "cyan",
+      "title": "证据随流程逐站检查",
+      "items": [
+        "①②：请求与准入配置；③：设备分配记录。",
+        "④：节点交付配置；⑤⑥：加载、调用和对照结果。",
+        "③有记录不能证明⑤生效；一次失败也不能单独归因。"
+      ]
+    },
+    {
       "dot": "emerald",
       "title": "读图边界与依据",
       "items": [
@@ -139,6 +148,14 @@
         "调度器与 Extender 配合，不是两个独立调度器串联。",
         "HAMi-core 是用户态约束；配置存在不能证明库已加载。",
         "https://project-hami.io/docs/v2.7.0/core-concepts/architecture"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "本课能证明到哪里",
+      "items": [
+        "概念图与合成对照卡只解释推理，不是硬件执行证据。",
+        "真实验证必须记录版本、配置、原始输出，并允许第三人重复。"
       ]
     }
   ]

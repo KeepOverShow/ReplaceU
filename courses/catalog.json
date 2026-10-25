@@ -3,8 +3,8 @@
     "part": "hami",
     "number": "01",
     "slug": "hami-01",
-    "title": "HAMi 的组件如何配合",
-    "summary": "先认识完整 HAMi，再区分调度和运行约束。",
+    "title": "HAMi 第一课：分配成功，能证明限制生效吗？",
+    "summary": "约 10 分钟：沿组件链路判断一条结论需要什么证据；完成两组对照判断。",
     "diagram": "hami-overview"
   },
   {

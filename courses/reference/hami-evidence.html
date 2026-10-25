@@ -1,0 +1,11 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HAMi 证据核对卡</title><style>body{max-width:760px;margin:30px auto;padding:20px;font:18px/1.8 system-ui;color:#19394a}li{margin:16px 0}a{color:#087b6d}pre{white-space:pre-wrap;background:#edf4f4;padding:20px}@media print{a{color:inherit}}</style><h1>HAMi：结论需要什么证据？</h1><p>先明确你要证明的结论，再收集相应层级的材料。</p><ol><li><b>配置</b>：提交 YAML、准入与预算配置。只能说明意图。</li><li><b>分配</b>：Pod UID、节点、GPU UUID、预算与分配日志。只能说明记录的选择。</li><li><b>运行</b>：进程加载、真实调用、拒绝来源与对照实验。结论限于所测版本和路径。</li></ol><pre>实验记录模板（空白模板，不是通过报告）
+结论：
+版本 / commit / 镜像摘要：
+设备与驱动：
+配置、程序和执行命令：
+预期的预算内 / 超预算 / 对照结果：
+实际结果与原始文件：
+失败是否可以归因：
+资源回收结果：
+独立复现者与结果：
+判定：通过 / 失败 / 不确定</pre><p>没有真实 NVIDIA 实验时，只能标记“待硬件验证”。图表、阅读完成和算术模拟不替代运行证据。</p><p><a href="../lessons/hami-01.html">返回第一课</a> · <a href="https://project-hami.io/docs/v2.7.0/core-concepts/architecture">固定版本架构材料</a> · <a href="https://github.com/Project-HAMi/HAMi-core">运行库源码</a></p></html>

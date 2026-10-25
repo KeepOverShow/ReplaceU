@@ -6,7 +6,7 @@ from shared import CSS,COMMON,js2,js3
 ROOT=Path(__file__).resolve().parents[2]; SITE=Path(__file__).parent/'site'
 PARTS={'hami':'第一部分 · HAMi 专题','koordinator':'第二部分 · Koordinator 专题','practice':'第三部分 · 联合实践'}
 def page(title,body,script=''):
- return '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+' · ReplaceU</title><style>'+CSS+'</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">三部分课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main>'+body+'</main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>'+COMMON+'\n'+script+'</script></html>'
+ return '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+' · ReplaceU</title><style>'+CSS+'h3[id]{scroll-margin-top:88px}</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">三部分课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main>'+body+'</main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>'+COMMON+'\n'+script+'</script></html>'
 def build():
  SITE.mkdir(exist_ok=True);(SITE/'lessons').mkdir(exist_ok=True);(SITE/'reference').mkdir(exist_ok=True)
  manifest=json.loads((ROOT/'courses/catalog.json').read_text());cards=''
@@ -19,8 +19,8 @@ def build():
  for name in ['index.html','catalog.html']:(SITE/name).write_text(page('课程目录',index))
  for entry in manifest:
   d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
-  body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p><details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a></nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
-  script=''
+  body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p>'+d.get('lead','')+'<details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a>'+d.get('toc','')+'</nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
+  script=d.get('script','')
   if slug=='practice-01':
    from practice_intro import BODY,SCRIPT
    body=BODY.replace('第 1 课 / 3','第三部分 · 第 1 课').replace('hami-roles.html','practice-flow.html');script=SCRIPT
@@ -35,6 +35,8 @@ def build():
  for name in ['practice-flow','hami-runtime','hami-overview','koord-overview']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
+ for reference in (ROOT/'courses/reference').glob('*.html'):
+  shutil.copy2(reference,SITE/'reference'/reference.name)
  for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-02'}.items():
   (SITE/'lessons'/(old+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url='+new+'.html"><a href="'+new+'.html">课程已按三部分重组，继续学习</a>')
  print('Built',len(manifest),'lessons in',len(PARTS),'parts')

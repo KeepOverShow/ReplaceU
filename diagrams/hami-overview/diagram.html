@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 3.2.0">
   <meta name="archify-reader-contract" content="declared-wide-v1">
-  <title>HAMi：从 Pod 到运行约束</title>
+  <title>HAMi 第一课：从分配记录到运行证据</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -5193,7 +5193,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
            data-preset-badge-blueprint="蓝图 / 修订 01"
            data-preset-badge-editorial="编辑风格 / 现场笔记">
         <div class="pulse-dot"></div>
-        <h1>HAMi：从 Pod 到运行约束</h1>
+        <h1>HAMi 第一课：从分配记录到运行证据</h1>
       </div>
     </div>
 
@@ -5203,7 +5203,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / 图版 04">
       <svg viewBox="0 0 320 912" role="img" lang="zh-CN" aria-labelledby="archify-diagram-title archify-diagram-description" data-animation="trace" data-preset="classic" data-quality-profile="showcase" data-node-ui="" data-reader-fit="intrinsic-height" data-reader-min-text="7.5" data-reader-primary-text="14">
-        <title id="archify-diagram-title">HAMi：从 Pod 到运行约束</title>
+        <title id="archify-diagram-title">HAMi 第一课：从分配记录到运行证据</title>
         <desc id="archify-diagram-description">由 Archify 生成的架构图。</desc>
         <!-- Definitions -->
         <defs>
@@ -5566,6 +5566,18 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     <div class="cards">
       <div class="card">
         <div class="card-header">
+          <div class="card-dot cyan"></div>
+          <h3>证据随流程逐站检查</h3>
+        </div>
+        <ul>
+          <li>①②：请求与准入配置；③：设备分配记录。</li>
+          <li>④：节点交付配置；⑤⑥：加载、调用和对照结果。</li>
+          <li>③有记录不能证明⑤生效；一次失败也不能单独归因。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
           <div class="card-dot emerald"></div>
           <h3>读图边界与依据</h3>
         </div>
@@ -5574,6 +5586,17 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <li>调度器与 Extender 配合，不是两个独立调度器串联。</li>
           <li>HAMi-core 是用户态约束；配置存在不能证明库已加载。</li>
           <li>https://project-hami.io/docs/v2.7.0/core-concepts/architecture</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-dot rose"></div>
+          <h3>本课能证明到哪里</h3>
+        </div>
+        <ul>
+          <li>概念图与合成对照卡只解释推理，不是硬件执行证据。</li>
+          <li>真实验证必须记录版本、配置、原始输出，并允许第三人重复。</li>
         </ul>
       </div>
     </div>
