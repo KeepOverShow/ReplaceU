@@ -5,7 +5,9 @@
 安装 Archify 后，从仓库根目录运行（将工具路径替换为实际位置）：
 
 ```sh
-node /path/to/archify/bin/archify.mjs finalize architecture diagrams/hami-overview/candidate.json .archify/architecture-hami-overview-20261024/diagram.html --quality showcase --json
+node /path/to/archify/bin/archify.mjs finalize architecture diagrams/hami-overview/candidate.json .archify/architecture-hami-evidence-20261025/diagram.html --quality showcase --json
 ```
 
 其他图的模式见 candidate 中 `diagram_type`；输出位置以 `meta.output` 为准。仓库保留已生成页面；无需为浏览课程重新生成。
+
+第二课新增 `hami-handoff` 配置交付图，更新 `hami-runtime` 为源码关联的时序图。两图分别固定 HAMi 与其引用的 HAMi-core 提交，重新生成时必须提供各自 `--repo-root`，详见显存机制实验的 source-lock.json。

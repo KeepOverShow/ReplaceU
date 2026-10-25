@@ -2,107 +2,212 @@
   "schema_version": 1,
   "diagram_type": "sequence",
   "meta": {
-    "title": "HAMi-core 如何拒绝一次超额显存申请",
+    "title": "显存申请：预算拒绝、底层失败与释放",
     "locale": "zh-CN",
     "quality_profile": "showcase",
-    "output": "projects/hami-course/.archify/sequence-hami-runtime-20261024/hami-runtime.html"
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi-core.git",
+      "revision": "3506e6222ca0f235cb745bc805832f422c484c17",
+      "link_mode": "web"
+    },
+    "output": ".archify/sequence-hami-runtime-deep-20261025/diagram.html"
   },
   "participants": [
     {
       "id": "app",
       "type": "external",
-      "label": "CUDA 应用",
-      "sublabel": "提出内存申请"
+      "label": "应用进程",
+      "sublabel": "CUDA Driver API",
+      "sources": [
+        {
+          "path": "test/test_alloc.c",
+          "line": 12,
+          "end_line": 18
+        },
+        {
+          "path": "test/test_alloc.c",
+          "line": 68,
+          "end_line": 75
+        }
+      ]
     },
     {
       "id": "core",
       "type": "security",
       "label": "HAMi-core",
-      "sublabel": "容器内预算检查"
+      "sublabel": "Hook、检查与记账",
+      "sources": [
+        {
+          "path": "src/cuda/memory.c",
+          "line": 129,
+          "end_line": 142
+        },
+        {
+          "path": "src/allocator/allocator.c",
+          "line": 36,
+          "end_line": 217
+        },
+        {
+          "path": "src/multiprocess/multiprocess_memory_limit.c",
+          "line": 243,
+          "end_line": 255
+        }
+      ]
     },
     {
       "id": "driver",
       "type": "backend",
-      "label": "CUDA Driver",
-      "sublabel": "执行获准的申请"
+      "label": "真实 Driver",
+      "sublabel": "底层分配与释放",
+      "sources": [
+        {
+          "path": "src/allocator/allocator.c",
+          "line": 114,
+          "end_line": 130
+        },
+        {
+          "path": "src/allocator/allocator.c",
+          "line": 165,
+          "end_line": 179
+        }
+      ]
     }
   ],
   "messages": [
     {
-      "id": "first",
+      "id": "a",
       "from": "app",
       "to": "core",
       "y": 160,
-      "label": "申请 2 GiB",
+      "label": "① 申请 2 GiB",
       "variant": "emphasis",
-      "note": "教学预算 4 GiB，当前使用 0 GiB"
+      "note": "示意初值 U=0、L=4 GiB；库已加载"
     },
     {
-      "id": "allow",
+      "id": "b",
       "from": "core",
       "to": "driver",
-      "y": 230,
-      "label": "预算内，转交调用",
-      "variant": "security"
+      "y": 250,
+      "label": "② 预算通过，调用底层",
+      "variant": "security",
+      "note": "oom_check 通过后才继续；此时尚未登记成功分配"
     },
     {
-      "id": "allocated",
+      "id": "c",
       "from": "driver",
       "to": "core",
-      "y": 275,
-      "label": "底层申请成功",
-      "variant": "return"
+      "y": 340,
+      "label": "③ 底层成功",
+      "variant": "return",
+      "note": "本分支假定 Driver 返回 CUDA_SUCCESS"
     },
     {
-      "id": "ok",
+      "id": "d",
       "from": "core",
       "to": "app",
-      "y": 320,
-      "label": "返回成功",
+      "y": 430,
+      "label": "④ 记账后返回成功",
       "variant": "return",
-      "note": "示例假定底层成功，已用预算成为 2 GiB"
+      "note": "add_chunk 登记地址并增加使用量；U=2 GiB"
     },
     {
-      "id": "over",
+      "id": "e",
       "from": "app",
       "to": "core",
-      "y": 390,
-      "label": "再申请 3 GiB",
-      "variant": "emphasis"
+      "y": 520,
+      "label": "⑤ 再申请 3 GiB",
+      "variant": "emphasis",
+      "note": "保留前次分配，未释放"
     },
     {
-      "id": "reject",
+      "id": "f",
       "from": "core",
       "to": "app",
-      "y": 435,
-      "label": "超过剩余预算，拒绝",
+      "y": 610,
+      "label": "⑥ 预算侧返回 OOM",
       "variant": "security",
-      "note": "这条超限路径不转交 Driver"
+      "note": "2+3>4；不做真实显存分配，不增加使用量"
+    },
+    {
+      "id": "g",
+      "from": "app",
+      "to": "core",
+      "y": 700,
+      "label": "⑦ 改为申请 1 GiB",
+      "variant": "emphasis",
+      "note": "这是独立失败分支：U 仍为 2 GiB"
+    },
+    {
+      "id": "h",
+      "from": "core",
+      "to": "driver",
+      "y": 790,
+      "label": "⑧ 预算通过，继续申请",
+      "variant": "security",
+      "note": "预算许可不保证物理资源可用"
+    },
+    {
+      "id": "i",
+      "from": "driver",
+      "to": "core",
+      "y": 880,
+      "label": "⑨ 底层返回失败",
+      "variant": "return",
+      "note": "示意 Driver OOM；没有进入成功记账分支"
+    },
+    {
+      "id": "j",
+      "from": "core",
+      "to": "app",
+      "y": 970,
+      "label": "⑩ 原错误向上返回",
+      "variant": "return",
+      "note": "同样 OOM 错误码，根因却可能不同；U=2 GiB"
+    },
+    {
+      "id": "k",
+      "from": "app",
+      "to": "core",
+      "y": 1060,
+      "label": "⑪ 释放前次 2 GiB",
+      "variant": "emphasis",
+      "note": "跟踪过的指针，假定底层释放正常"
+    },
+    {
+      "id": "l",
+      "from": "core",
+      "to": "driver",
+      "y": 1150,
+      "label": "⑫ 请求真实释放",
+      "variant": "default",
+      "note": "remove_chunk 随后移除记录、扣减账本"
+    },
+    {
+      "id": "m",
+      "from": "core",
+      "to": "app",
+      "y": 1240,
+      "label": "⑬ 返回释放结果",
+      "variant": "return",
+      "note": "本例 U=0；Pod 调度预算并未自动归还"
     }
   ],
   "cards": [
     {
       "dot": "emerald",
-      "title": "这是运行时示意",
+      "title": "一次调用经过谁",
       "items": [
-        "已假定分配及库加载完成；调度侧并未参与每次 CUDA 调用。",
-        "数字为教学示例，页面实验使用整数账本，不执行 CUDA。"
+        "每次调用发生在应用进程的 Hook 与 Driver 链路；没有调度器 RPC。",
+        "上图选取同步 cuMemAlloc_v2 / cuMemFree_v2 路径，合并内部函数与共享账本访问。"
       ]
     },
     {
-      "dot": "cyan",
-      "title": "阅读边界",
+      "dot": "rose",
+      "title": "版本和证据边界",
       "items": [
-        "只展开显存分配的成功与超额分支；未画出释放、并发及底层失败。",
-        "HAMi-core 是用户态软件约束，不等同于硬件分区或安全沙箱。"
-      ]
-    },
-    {
-      "dot": "slate",
-      "title": "官方依据",
-      "items": [
-        "https://github.com/Project-HAMi/HAMi-core",
-        "https://project-hami.io/docs/core-concepts/gpu-virtualization"
+        "固定 HAMi-core 3506e62，来自 HAMi v2.7.0 的 libvgpu gitlink。",
+        "数字和成功/失败结果是教学分支，不是这台机器的 CUDA 运行报告。",
+        "释放路径源码没有检查 cuMemoryFree 的返回码再扣账；不能据此宣称所有失败处理都完备。"
       ]
     }
   ]

@@ -16,6 +16,7 @@
 - [课程站点与模拟 API](apps/course-site/)
 - [阿里云部署](deploy/aliyun/)
 - [完整实践项目](projects/gpu-workbench/)
+- [HAMi 显存机制模型、源码校验与 CUDA 探针](projects/hami-memory-lab/)
 - [Archify 图源与页面](diagrams/)
 
 ## 本地启动

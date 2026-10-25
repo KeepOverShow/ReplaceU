@@ -1,0 +1,37 @@
+{
+  "hami": {
+    "url": "https://github.com/Project-HAMi/HAMi.git",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "paths": [
+      "pkg/scheduler/webhook.go",
+      "pkg/scheduler/scheduler.go",
+      "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go"
+    ],
+    "sha256": {
+      "pkg/scheduler/webhook.go": "7ce6737f385cd654879d5559239c9eded002a4a773aa20751d540f5f12645dcf",
+      "pkg/scheduler/scheduler.go": "80139899f4aa0998b5d5a94cca11726638a52e2bc261fbef9b830a54fa7594ec",
+      "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go": "0e043280278d921e5af0a21ab0f2fc8c12ca0f69bbc87488d4fefc5156b685ff"
+    }
+  },
+  "hami_core": {
+    "url": "https://github.com/Project-HAMi/HAMi-core.git",
+    "revision": "3506e6222ca0f235cb745bc805832f422c484c17",
+    "paths": [
+      "src/cuda/memory.c",
+      "src/allocator/allocator.c",
+      "src/multiprocess/multiprocess_memory_limit.c",
+      "src/libvgpu.c",
+      "src/cuda/hook.c",
+      "src/include/libcuda_hook.h"
+    ],
+    "sha256": {
+      "src/cuda/memory.c": "08b6e92029283a9c888a6bfba078337038b2014b02d2387540c18cf2f8e68d5e",
+      "src/allocator/allocator.c": "075d203397987a4354aa11f2c5de11ead0c2ab015d5fa89a5adf6c3624d78bfa",
+      "src/multiprocess/multiprocess_memory_limit.c": "48f2a0e956fe0a54d9392e557ce40833e921e24f7923d3221e1629d3f6bb7771",
+      "src/libvgpu.c": "df48a0270da18d222b8f62fec54fa220040e47725ee7478411b1ca6762698aad",
+      "src/cuda/hook.c": "6c0fac8f4005f85fb1b918308fb0d891f06c4e89e5b73f5a0cabd1e6a8a990f4",
+      "src/include/libcuda_hook.h": "69fb98d955d585ee458a8c2f1b7360ae4ab290dcf57026163ab96e5183ea05b2"
+    }
+  },
+  "hardware_validation": "not_run"
+}

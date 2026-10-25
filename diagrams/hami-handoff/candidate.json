@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "显存限制开始前：谁把预算交给运行库",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi.git",
+      "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+      "link_mode": "web"
+    },
+    "output": ".archify/architecture-hami-handoff-20261025/diagram.html"
+  },
+  "components": [
+    {
+      "id": "admission",
+      "type": "backend",
+      "label": "① Webhook 准入",
+      "sublabel": "识别请求并设置调度入口",
+      "sources": [
+        {
+          "path": "pkg/scheduler/webhook.go",
+          "line": 79,
+          "end_line": 104
+        }
+      ],
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        250,
+        82
+      ]
+    },
+    {
+      "id": "scheduler",
+      "type": "backend",
+      "label": "② 调度与设备选择",
+      "sublabel": "预算与设备写入 Pod 注解",
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 525,
+          "end_line": 547
+        }
+      ],
+      "pos": [
+        40,
+        190
+      ],
+      "size": [
+        250,
+        82
+      ]
+    },
+    {
+      "id": "plugin",
+      "type": "backend",
+      "label": "③ 设备插件 Allocate",
+      "sublabel": "读取分配结果并生成配置",
+      "sources": [
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 491,
+          "end_line": 519
+        },
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 529,
+          "end_line": 565
+        },
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 580,
+          "end_line": 585
+        }
+      ],
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        250,
+        82
+      ]
+    },
+    {
+      "id": "config",
+      "type": "external",
+      "label": "④ 容器启动所需配置",
+      "sublabel": "设备、预算、库及共享缓存",
+      "sources": [
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 513,
+          "end_line": 546
+        },
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 547,
+          "end_line": 565
+        }
+      ],
+      "pos": [
+        40,
+        490
+      ],
+      "size": [
+        250,
+        82
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "one",
+      "from": "admission",
+      "to": "scheduler",
+      "label": "按 schedulerName 调度",
+      "variant": "emphasis"
+    },
+    {
+      "id": "two",
+      "from": "scheduler",
+      "to": "plugin",
+      "label": "绑定后经节点分配链路",
+      "variant": "emphasis"
+    },
+    {
+      "id": "three",
+      "from": "plugin",
+      "to": "config",
+      "label": "返回 AllocateResponse",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "配置怎样交付",
+      "items": [
+        "v2.7.0 非 MIG 共享分支生成 CUDA_DEVICE_MEMORY_LIMIT_i 与共享缓存环境变量。",
+        "挂载 libvgpu.so；默认控制分支还挂载 /etc/ld.so.preload。",
+        "API Server、kube-scheduler、kubelet 与容器运行时的中间交接在图中合并，不表示 Webhook 直接调用 Extender。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "准备不等于运行",
+      "items": [
+        "源码证明配置生成路径，不证明某个实际容器已经加载成功。",
+        "应用开始申请显存后走另一张运行时图，不再逐次请求 Webhook 或调度器。"
+      ]
+    }
+  ]
+}

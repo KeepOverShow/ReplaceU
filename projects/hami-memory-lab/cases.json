@@ -1,0 +1,168 @@
+{
+  "success": {
+    "title": "预算内且底层成功",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 1024 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "Driver 成功后登记地址与使用量；向应用返回成功",
+        "used_mib": 3072,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_SUCCESS",
+        "failure_origin": null
+      }
+    ]
+  },
+  "budget": {
+    "title": "预算侧拒绝",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 3072 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core",
+        "action": "逻辑预算拒绝；不调用真实分配函数；不登记新分配",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_ERROR_OUT_OF_MEMORY",
+        "failure_origin": "budget"
+      }
+    ]
+  },
+  "driver": {
+    "title": "预算内但底层失败",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 1024 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "Driver → HAMi-core → 应用",
+        "action": "教学桩强制返回物理层失败；成功记账路径未执行",
+        "used_mib": 2048,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_ERROR_OUT_OF_MEMORY",
+        "failure_origin": "driver"
+      }
+    ]
+  },
+  "release": {
+    "title": "释放后重新申请",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core → Driver",
+        "action": "释放已跟踪的 2048 MiB；本例假定底层释放成功",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "撤销该分配记账；Pod 的调度预算不因此自动归还",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 3072 MiB；读取逻辑预算与共享账本",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "Driver 成功后登记地址与使用量；向应用返回成功",
+        "used_mib": 3072,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0,
+        "result": "CUDA_SUCCESS",
+        "failure_origin": null
+      }
+    ]
+  },
+  "race": {
+    "title": "跨进程交错反例",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "进程 A / B",
+        "action": "共享初值 2 GiB，各申请 1.5 GiB；A、B 都在对方记账前读取 2 GiB",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "两个检查窗口",
+        "action": "两边各自看到 2 + 1.5 ≤ 4；单次读和写加锁不等于整段原子",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "Driver 与共享账本",
+        "action": "假定两次底层调用都成功，随后各加 1.5 GiB，合计达到 5 GiB",
+        "used_mib": 5120,
+        "driver_alloc_calls": 2,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      }
+    ]
+  }
+}

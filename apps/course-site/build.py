@@ -21,6 +21,9 @@ def build():
   d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
   body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p>'+d.get('lead','')+'<details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a>'+d.get('toc','')+'</nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
   script=d.get('script','')
+  if '__MEMORY_CASES__' in script:
+   cases=(ROOT/'projects/hami-memory-lab/cases.json').read_text()
+   script=script.replace('__MEMORY_CASES__',cases)
   if slug=='practice-01':
    from practice_intro import BODY,SCRIPT
    body=BODY.replace('第 1 课 / 3','第三部分 · 第 1 课').replace('hami-roles.html','practice-flow.html');script=SCRIPT
@@ -32,7 +35,7 @@ def build():
    script+='quiz("checkQuiz",'+str(d['correct'])+','+json.dumps(d['feedback'],ensure_ascii=False)+');'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
  for reference in (ROOT/'courses/reference').glob('*.html'):
