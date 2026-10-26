@@ -28,19 +28,22 @@ def build():
    from practice_intro import BODY,SCRIPT
    body=BODY.replace('第 1 课 / 3','第三部分 · 第 1 课').replace('hami-roles.html','practice-flow.html');script=SCRIPT
   else:body+='<section id="explain"><h2>逐步讲解</h2>'+d['body']+'</section>'
-  if slug=='hami-02':script+=js3
+  if d.get('memory_lab'):script+=js3
   if slug=='practice-02':script+=js2
   if d['choices']:
-   body+='<section id="check"><h2>先判断，再用自己的话解释</h2><div id="checkQuiz" class="choices">'+''.join('<button>'+c+'</button>' for c in d['choices'])+'<output aria-live="polite">选择一个答案。</output></div><textarea data-note="'+slug+'" placeholder="沿图复述：输入是什么，谁决定，结果如何验证？" rows="4"></textarea><p>把答案发回对话，我会先核对你的理解，再继续下一步。</p></section>'
+   body+='<section id="check"><h2>先判断，再用自己的话解释</h2><div id="checkQuiz" class="choices">'+''.join('<button>'+c+'</button>' for c in d['choices'])+'<output aria-live="polite">选择一个答案。</output></div><textarea data-note="'+d.get('note_key',slug)+'" placeholder="沿图复述：输入是什么，谁决定，结果如何验证？" rows="4"></textarea><p>把答案发回对话，我会先核对你的理解，再继续下一步。</p></section>'
    script+='quiz("checkQuiz",'+str(d['correct'])+','+json.dumps(d['feedback'],ensure_ascii=False)+');'
+  siblings=[x for x in manifest if x['part']==d['part']]
+  pos=next(i for i,x in enumerate(siblings) if x['slug']==slug)
+  body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
  for reference in (ROOT/'courses/reference').glob('*.html'):
   shutil.copy2(reference,SITE/'reference'/reference.name)
- for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-02'}.items():
+ for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-03'}.items():
   (SITE/'lessons'/(old+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url='+new+'.html"><a href="'+new+'.html">课程已按三部分重组，继续学习</a>')
  print('Built',len(manifest),'lessons in',len(PARTS),'parts')
 if __name__=='__main__':build()

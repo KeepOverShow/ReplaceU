@@ -10,7 +10,7 @@
 | 第二部分 | Koordinator 组件、观测、调度与节点治理 | [Koordinator](courses/koordinator/) |
 | 第三部分 | Koordinator + HAMi-core 联合实践、资源碎片、证据链 | [实践](courses/practice/) |
 
-当前提供 5 节入门课。每课配 Archify 交互主图、讲解与复述任务；后续主题逐步增加，不把目录当作已掌握记录。
+当前提供 6 节入门课。每课配 Archify 交互主图、讲解与复述任务；后续主题逐步增加，不把目录当作已掌握记录。
 
 - [在线目录](https://showmax.cloud/course/catalog.html)
 - [课程站点与模拟 API](apps/course-site/)

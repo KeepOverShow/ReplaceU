@@ -3,15 +3,23 @@
     "part": "hami",
     "number": "01",
     "slug": "hami-01",
-    "title": "HAMi 第一课：分配成功，能证明限制生效吗？",
-    "summary": "约 10 分钟：沿组件链路判断一条结论需要什么证据；完成两组对照判断。",
-    "diagram": "hami-overview"
+    "title": "HAMi 第一课：Pod 怎么拿到一张卡",
+    "summary": "沿请求、选卡、绑定、设备交付追踪一次 Pod 启动，拆清各组件的输入、状态和证据。",
+    "diagram": "hami-pod-card"
   },
   {
     "part": "hami",
     "number": "02",
     "slug": "hami-02",
-    "title": "HAMi-core 原理拆解：配置、拦截、记账与失败",
+    "title": "HAMi 第二课：分配成功，能证明限制生效吗？",
+    "summary": "约 10 分钟：沿组件链路判断一条结论需要什么证据；完成两组对照判断。",
+    "diagram": "hami-overview"
+  },
+  {
+    "part": "hami",
+    "number": "03",
+    "slug": "hami-03",
+    "title": "HAMi 第三课：HAMi-core 原理拆解",
     "summary": "分三段学习：启动配置如何交付 → 一次调用如何执行 → 并发、失败与证据如何追问。",
     "diagram": "hami-handoff"
   },

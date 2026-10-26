@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Pod 怎么拿到一张卡：HAMi 交接主线",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi.git",
+      "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+      "link_mode": "web"
+    },
+    "output": ".archify/architecture-pod-card-20261026/diagram.html"
+  },
+  "components": [
+    {
+      "id": "request",
+      "type": "external",
+      "label": "① Pod 资源请求",
+      "sublabel": "数量、显存预算、核心比例",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "examples/nvidia/default_use.yaml",
+          "line": 1,
+          "end_line": 14
+        }
+      ]
+    },
+    {
+      "id": "admission",
+      "type": "backend",
+      "label": "② Webhook 准入",
+      "sublabel": "修改 schedulerName 并返回补丁",
+      "pos": [
+        40,
+        190
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/scheduler/webhook.go",
+          "line": 79,
+          "end_line": 104
+        }
+      ]
+    },
+    {
+      "id": "filter",
+      "type": "backend",
+      "label": "③ 调度主流程与 Extender",
+      "sublabel": "筛选设备并写入 Pod 注解",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 483,
+          "end_line": 547
+        },
+        {
+          "path": "charts/hami/templates/scheduler/configmapnew.yaml",
+          "line": 20,
+          "end_line": 40
+        }
+      ]
+    },
+    {
+      "id": "bind",
+      "type": "backend",
+      "label": "④ HAMi Bind",
+      "sublabel": "锁、阶段注解、绑定 API",
+      "pos": [
+        40,
+        490
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 421,
+          "end_line": 465
+        }
+      ]
+    },
+    {
+      "id": "allocate",
+      "type": "backend",
+      "label": "⑤ 节点设备插件 Allocate",
+      "sublabel": "读取设备注解并检查数量",
+      "pos": [
+        40,
+        640
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 457,
+          "end_line": 519
+        }
+      ]
+    },
+    {
+      "id": "response",
+      "type": "external",
+      "label": "⑥ 容器启动配置",
+      "sublabel": "库、设备配置、预算与缓存",
+      "pos": [
+        40,
+        790
+      ],
+      "size": [
+        290,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+          "line": 529,
+          "end_line": 585
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "step-0",
+      "from": "request",
+      "to": "admission",
+      "label": "经 API Server 准入",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-1",
+      "from": "admission",
+      "to": "filter",
+      "label": "按调度配置进入 filter",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-2",
+      "from": "filter",
+      "to": "bind",
+      "label": "筛选成功后进入 bind",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-3",
+      "from": "bind",
+      "to": "allocate",
+      "label": "绑定后由 kubelet 请求",
+      "variant": "emphasis"
+    },
+    {
+      "id": "step-4",
+      "from": "allocate",
+      "to": "response",
+      "label": "成功返回响应",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "图的范围",
+      "items": [
+        "传统 NVIDIA 非 MIG 路径；各阶段失败均需沿对应组件日志核查。",
+        "API Server、kubelet 和容器运行时的内部步骤折叠在交接箭头中，不表示组件直接调用。",
+        "启动配置交给 kubelet 与运行时；实际 CUDA 执行与预算验证在后续课展开。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "拿到卡的证据分层",
+      "items": [
+        "资源数量 1 不自动表示独占整张物理 GPU。",
+        "注解表示设备选择，绑定表示节点确定，AllocateResponse 表示配置交付。",
+        "这些都不能单独证明 CUDA 执行成功或显存限制生效。"
+      ]
+    }
+  ]
+}
