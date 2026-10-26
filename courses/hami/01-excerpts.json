@@ -1,0 +1,234 @@
+[
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/rm/device_map.go",
+    "start": 111,
+    "end": 118,
+    "code": "func (b *deviceMapBuilder) buildGPUDeviceMap() (DeviceMap, error) {\n  devices := make(DeviceMap)\n\n  b.VisitDevices(func(i int, gpu device.Device) error {\n    name, ret := gpu.GetName()\n    if ret != nvml.SUCCESS {\n      return fmt.Errorf(\"error getting product name for GPU: %v\", ret)\n    }"
+  },
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/rm/device_map.go",
+    "start": 126,
+    "end": 130,
+    "code": "for _, resource := range b.config.Resources.GPUs {\n  if resource.Pattern.Matches(name) {\n    index, info := newGPUDevice(i, gpu)\n    return devices.setEntry(resource.Name, index, info)\n  }"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubelet",
+    "revision": "ae04b7f5088aa70f357f719cbefbf4a39cda6c95",
+    "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+    "start": 24,
+    "end": 26,
+    "code": "service Registration {\n  rpc Register(RegisterRequest) returns (Empty) {}\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubelet",
+    "revision": "ae04b7f5088aa70f357f719cbefbf4a39cda6c95",
+    "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+    "start": 54,
+    "end": 59,
+    "code": "rpc GetDevicePluginOptions(Empty) returns (DevicePluginOptions) {}\n\n// ListAndWatch returns a stream of List of Devices\n// Whenever a Device state change or a Device disappears, ListAndWatch\n// returns the new list\nrpc ListAndWatch(Empty) returns (stream ListAndWatchResponse) {}"
+  },
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+    "start": 394,
+    "end": 404,
+    "code": "client := kubeletdevicepluginv1beta1.NewRegistrationClient(conn)\nreqt := &kubeletdevicepluginv1beta1.RegisterRequest{\n  Version:      kubeletdevicepluginv1beta1.Version,\n  Endpoint:     path.Base(plugin.socket),\n  ResourceName: string(plugin.rm.Resource()),\n  Options: &kubeletdevicepluginv1beta1.DevicePluginOptions{\n    GetPreferredAllocationAvailable: false,\n  },\n}\n\n_, err = client.Register(context.Background(), reqt)"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 443,
+    "end": 444,
+    "code": "for resourceName, devices := range m.healthyDevices {\n  eI, ok := m.endpoints[resourceName]"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 456,
+    "end": 459,
+    "code": "} else {\n  capacity[v1.ResourceName(resourceName)] = *resource.NewQuantity(int64(devices.Len()), resource.DecimalSI)\n  allocatable[v1.ResourceName(resourceName)] = *resource.NewQuantity(int64(devices.Len()), resource.DecimalSI)\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 437,
+    "end": 441,
+    "code": "func (m *ManagerImpl) GetCapacity() (v1.ResourceList, v1.ResourceList, []string) {\n  needsUpdateCheckpoint := false\n  var capacity = v1.ResourceList{}\n  var allocatable = v1.ResourceList{}\n  deletedResources := sets.New[string]()"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 484,
+    "end": 485,
+    "code": "  return capacity, allocatable, deletedResources.UnsortedList()\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 461,
+    "end": 462,
+    "code": "for resourceName, devices := range m.unhealthyDevices {\n  eI, ok := m.endpoints[resourceName]"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 471,
+    "end": 476,
+    "code": "} else {\n  capacityCount := capacity[v1.ResourceName(resourceName)]\n  unhealthyCount := *resource.NewQuantity(int64(devices.Len()), resource.DecimalSI)\n  capacityCount.Add(unhealthyCount)\n  capacity[v1.ResourceName(resourceName)] = capacityCount\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 271,
+    "end": 275,
+    "code": "func (m *ManagerImpl) genericDeviceUpdateCallback(resourceName string, devices []pluginapi.Device) {\n  healthyCount := 0\n  m.mutex.Lock()\n  m.healthyDevices[resourceName] = sets.New[string]()\n  m.unhealthyDevices[resourceName] = sets.New[string]()"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 296,
+    "end": 302,
+    "code": "m.allDevices[resourceName][dev.ID] = dev\nif dev.Health == pluginapi.Healthy {\n  m.healthyDevices[resourceName].Insert(dev.ID)\n  healthyCount++\n} else {\n  m.unhealthyDevices[resourceName].Insert(dev.ID)\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 263,
+    "end": 269,
+    "code": "func (m *ManagerImpl) PluginListAndWatchReceiver(resourceName string, resp *pluginapi.ListAndWatchResponse) {\n  var devices []pluginapi.Device\n  for _, d := range resp.Devices {\n    devices = append(devices, *d)\n  }\n  m.genericDeviceUpdateCallback(resourceName, devices)\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/container_manager_linux.go",
+    "start": 902,
+    "end": 904,
+    "code": "func (cm *containerManagerImpl) GetDevicePluginResourceCapacity() (v1.ResourceList, v1.ResourceList, []string) {\n  return cm.deviceManager.GetCapacity()\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/nodestatus/setters.go",
+    "start": 326,
+    "end": 332,
+    "code": "devicePluginCapacity, devicePluginAllocatable, removedDevicePlugins = devicePluginResourceCapacityFunc()\nfor k, v := range devicePluginCapacity {\n  if old, ok := node.Status.Capacity[k]; !ok || old.Value() != v.Value() {\n    klog.V(2).InfoS(\"Updated capacity for device plugin\", \"plugin\", k, \"capacity\", v.Value())\n  }\n  node.Status.Capacity[k] = v\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/nodestatus/setters.go",
+    "start": 373,
+    "end": 377,
+    "code": "for k, v := range devicePluginAllocatable {\n  if old, ok := node.Status.Allocatable[k]; !ok || old.Value() != v.Value() {\n    klog.V(2).InfoS(\"Updated allocatable\", \"device\", k, \"allocatable\", v.Value())\n  }\n  node.Status.Allocatable[k] = v"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 444,
+    "end": 445,
+    "code": "eI, ok := m.endpoints[resourceName]\nif (ok && eI.e.stopGracePeriodExpired()) || !ok {"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 452,
+    "end": 455,
+    "code": "delete(m.endpoints, resourceName)\ndelete(m.healthyDevices, resourceName)\ndeletedResources.Insert(resourceName)\nneedsUpdateCheckpoint = true"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/endpoint.go",
+    "start": 73,
+    "end": 77,
+    "code": "func (e *endpointImpl) stopGracePeriodExpired() bool {\n  e.mutex.Lock()\n  defer e.mutex.Unlock()\n  return !e.stopTime.IsZero() && time.Since(e.stopTime) > endpointStopGracePeriod\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/nodestatus/setters.go",
+    "start": 334,
+    "end": 339,
+    "code": "for _, removedResource := range removedDevicePlugins {\n  klog.V(2).InfoS(\"Set capacity for removed resource to 0 on device removal\", \"device\", removedResource)\n  // Set the capacity of the removed resource to 0 instead of\n  // removing the resource from the node status. This is to indicate\n  // that the resource is managed by device plugin and had been\n  // registered before."
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/nodestatus/setters.go",
+    "start": 344,
+    "end": 345,
+    "code": "  node.Status.Capacity[v1.ResourceName(removedResource)] = *resource.NewQuantity(int64(0), resource.DecimalSI)\n}"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 478,
+    "end": 484,
+    "code": "m.mutex.Unlock()\nif needsUpdateCheckpoint {\n  if err := m.writeCheckpoint(); err != nil {\n    klog.ErrorS(err, \"Error on writing checkpoint\")\n  }\n}\nreturn capacity, allocatable, deletedResources.UnsortedList()"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 488,
+    "end": 490,
+    "code": "func (m *ManagerImpl) writeCheckpoint() error {\n  m.mutex.Lock()\n  registeredDevs := make(map[string][]string)"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 491,
+    "end": 498,
+    "code": "for resource, devices := range m.healthyDevices {\n  registeredDevs[resource] = devices.UnsortedList()\n}\ndata := checkpoint.New(m.podDevices.toCheckpointData(),\n  registeredDevs)\nm.mutex.Unlock()\nerr := m.checkpointManager.CreateCheckpoint(kubeletDeviceManagerCheckpoint, data)\nif err != nil {"
+  },
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/rm/devices.go",
+    "start": 163,
+    "end": 172,
+    "code": "if !strings.Contains(ds.GetIDs()[0], \"MIG\") {\n  for _, dev := range ds {\n    for i := uint(0); i < count; i++ {\n      id := fmt.Sprintf(\"%v-%v\", dev.ID, i)\n      res = append(res, &kubeletdevicepluginv1beta1.Device{\n        ID:       id,\n        Health:   dev.Health,\n        Topology: nil,\n      })\n    }"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubelet",
+    "revision": "ae04b7f5088aa70f357f719cbefbf4a39cda6c95",
+    "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+    "start": 159,
+    "end": 165,
+    "code": "message AllocateRequest {\n  repeated ContainerAllocateRequest container_requests = 1;\n}\n\nmessage ContainerAllocateRequest {\n  repeated string devices_ids = 1 [(gogoproto.customname) = \"DevicesIDs\"];\n}"
+  },
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+    "start": 491,
+    "end": 499,
+    "code": "} else {\n  currentCtr, devreq, err := GetNextDeviceRequest(nvidia.NvidiaGPUDevice, *current)\n  klog.Infoln(\"deviceAllocateFromAnnotation=\", devreq)\n  if err != nil {\n    PodAllocationFailed(nodename, current, NodeLockNvidia)\n    return &kubeletdevicepluginv1beta1.AllocateResponse{}, err\n  }\n  if len(devreq) != len(reqs.ContainerRequests[idx].DevicesIDs) {\n    PodAllocationFailed(nodename, current, NodeLockNvidia)"
+  },
+  {
+    "repository": "https://github.com/Project-HAMi/HAMi",
+    "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+    "path": "pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go",
+    "start": 513,
+    "end": 519,
+    "code": "if plugin.operatingMode != \"mig\" {\n  for i, dev := range devreq {\n    limitKey := fmt.Sprintf(\"CUDA_DEVICE_MEMORY_LIMIT_%v\", i)\n    response.Envs[limitKey] = fmt.Sprintf(\"%vm\", dev.Usedmem)\n  }\n  response.Envs[\"CUDA_DEVICE_SM_LIMIT\"] = fmt.Sprint(devreq[0].Usedcores)\n  response.Envs[\"CUDA_DEVICE_MEMORY_SHARED_CACHE\"] = fmt.Sprintf(\"%s/vgpu/%v.cache\", hostHookPath, uuid.New().String())"
+  }
+]

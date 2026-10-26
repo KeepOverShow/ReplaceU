@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "从设备列表到 Node：GetCapacity 源码链路",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/architecture-capacity-source-20261026/diagram.html",
+    "repository": {
+      "url": "https://github.com/kubernetes/kubernetes.git",
+      "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+      "link_mode": "web"
+    }
+  },
+  "components": [
+    {
+      "id": "receive",
+      "type": "backend",
+      "label": "接收设备列表",
+      "sublabel": "PluginListAndWatchReceiver()",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/devicemanager/manager.go",
+          "line": 263,
+          "end_line": 269
+        }
+      ]
+    },
+    {
+      "id": "callback",
+      "type": "backend",
+      "label": "重建健康集合",
+      "sublabel": "genericDeviceUpdateCallback()",
+      "pos": [
+        40,
+        190
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/devicemanager/manager.go",
+          "line": 271,
+          "end_line": 303
+        }
+      ]
+    },
+    {
+      "id": "capacity",
+      "type": "backend",
+      "label": "计算容量并清理失效状态",
+      "sublabel": "GetCapacity()",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/devicemanager/manager.go",
+          "line": 437,
+          "end_line": 484
+        }
+      ]
+    },
+    {
+      "id": "wrapper",
+      "type": "backend",
+      "label": "转交三个返回值",
+      "sublabel": "GetDevicePluginResourceCapacity()",
+      "pos": [
+        40,
+        490
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/container_manager_linux.go",
+          "line": 902,
+          "end_line": 904
+        }
+      ]
+    },
+    {
+      "id": "setter",
+      "type": "backend",
+      "label": "写入 Node.Status",
+      "sublabel": "MachineInfo() 返回的 Setter",
+      "pos": [
+        40,
+        640
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/nodestatus/setters.go",
+          "line": 326,
+          "end_line": 377
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "edge-0",
+      "from": "receive",
+      "to": "callback",
+      "label": "调用回调",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-1",
+      "from": "callback",
+      "to": "capacity",
+      "label": "共享集合供状态更新读取",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-2",
+      "from": "capacity",
+      "to": "wrapper",
+      "label": "返回容量及失效资源名",
+      "variant": "emphasis"
+    },
+    {
+      "id": "edge-3",
+      "from": "wrapper",
+      "to": "setter",
+      "label": "通过注入回调消费结果",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "沿数据追，分清调用",
+      "items": [
+        "接收方法调用回调；回调重建 healthyDevices / unhealthyDevices。",
+        "GetCapacity 在另一条节点状态更新路径读取集合；回调没有直接调用它。",
+        "容器管理器包装返回结果；MachineInfo 的 Setter 写本地 Node 对象，后续再发布。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "三个必须解释的分支",
+      "items": [
+        "健康数赋给 capacity 和 allocatable；不健康数只加到 capacity。",
+        "端点失效会触发清理，失效资源名交给 Setter 将容量设为 0。",
+        "GetCapacity 解锁后才调用再次加锁的 writeCheckpoint，返回值和落盘不是一个原子事务。"
+      ]
+    }
+  ]
+}

@@ -4,8 +4,8 @@
     "number": "01",
     "slug": "hami-01",
     "title": "HAMi 第一课：Pod 怎么拿到一张卡",
-    "summary": "先拆 GPU 发现、两个 Unix Socket、Device Plugin gRPC 和 Node 资源上报，再追踪 Pod 分配与 HAMi 共享扩展。",
-    "diagram": "hami-device-protocol"
+    "summary": "每次读一小段源码：从 GPU 上报到 GetCapacity，再追 Node 状态与 HAMi 分配。",
+    "diagram": "hami-capacity-source"
   },
   {
     "part": "hami",

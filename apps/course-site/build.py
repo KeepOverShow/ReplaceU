@@ -20,6 +20,8 @@ def build():
  for entry in manifest:
   d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
   body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p>'+d.get('lead','')+'<details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a>'+d.get('toc','')+'</nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
+  if d.get('map_collapsed'):
+   body=body.replace('<section id="map">','<details id="map"><summary>展开 Archify 源码链路图</summary><section>').replace('</iframe></section>','</iframe></section></details>')
   script=d.get('script','')
   if '__MEMORY_CASES__' in script:
    cases=(ROOT/'projects/hami-memory-lab/cases.json').read_text()
@@ -38,7 +40,7 @@ def build():
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
  for reference in (ROOT/'courses/reference').glob('*.html'):

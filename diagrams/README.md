@@ -15,3 +15,5 @@ node /path/to/archify/bin/archify.mjs finalize architecture diagrams/hami-overvi
 `hami-pod-card`：第一课的 Pod 请求到启动配置交接图，固定 HAMi v2.7.0 源码；Kubernetes 与运行时内部过程折叠在箭头中。
 
 `hami-device-protocol`：第一课的 Device Plugin gRPC 主图，基于 kubelet v0.31.10 的 api.proto，区分注册方向、服务端流与可选调用。`hami-pod-card` 保留为本课 HAMi 扩展图。
+
+`hami-capacity-source`：GetCapacity 源码数据链路，固定 Kubernetes v1.31.10。第一课默认折叠主图，按需查看；原协议图及 HAMi 扩展图仍可从代码卡打开。
