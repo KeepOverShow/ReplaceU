@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Device Plugin gRPC：注册、设备流与分配",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": ".archify/sequence-device-protocol-20261026/diagram.html",
+    "repository": {
+      "url": "https://github.com/kubernetes/kubelet.git",
+      "revision": "ae04b7f5088aa70f357f719cbefbf4a39cda6c95",
+      "link_mode": "web"
+    }
+  },
+  "participants": [
+    {
+      "id": "plugin",
+      "type": "backend",
+      "label": "设备插件",
+      "sublabel": "自己的 Unix Socket",
+      "sources": [
+        {
+          "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+          "line": 50,
+          "end_line": 110
+        },
+        {
+          "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+          "line": 159,
+          "end_line": 198
+        }
+      ]
+    },
+    {
+      "id": "kubelet",
+      "type": "backend",
+      "label": "kubelet",
+      "sublabel": "注册端 + Device Manager",
+      "sources": [
+        {
+          "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+          "line": 18,
+          "end_line": 44
+        },
+        {
+          "path": "pkg/apis/deviceplugin/v1beta1/api.proto",
+          "line": 61,
+          "end_line": 76
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "rpc-0",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 170,
+      "label": "Register：版本、端点、资源名",
+      "variant": "emphasis",
+      "note": "注册不包含设备清单"
+    },
+    {
+      "id": "rpc-1",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 270,
+      "label": "Empty：注册响应",
+      "variant": "return"
+    },
+    {
+      "id": "rpc-2",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 325,
+      "label": "GetDevicePluginOptions",
+      "variant": "default"
+    },
+    {
+      "id": "rpc-3",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 380,
+      "label": "可选能力声明",
+      "variant": "return"
+    },
+    {
+      "id": "rpc-4",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 435,
+      "label": "ListAndWatch(Empty)",
+      "variant": "emphasis",
+      "note": "打开服务端响应流"
+    },
+    {
+      "id": "rpc-5",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 535,
+      "label": "设备列表：ID、健康、拓扑",
+      "variant": "return",
+      "note": "后续健康变化继续沿此流报告完整列表"
+    },
+    {
+      "id": "rpc-6",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 635,
+      "label": "GetPreferredAllocation（可选）",
+      "variant": "default",
+      "note": "仅能力启用时；请求候选 ID 与数量"
+    },
+    {
+      "id": "rpc-7",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 735,
+      "label": "偏好 ID（可选响应）",
+      "variant": "return"
+    },
+    {
+      "id": "rpc-8",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 790,
+      "label": "Allocate：容器设备 ID 分组",
+      "variant": "emphasis",
+      "note": "Pod 已绑定后，节点侧准备设备"
+    },
+    {
+      "id": "rpc-9",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 890,
+      "label": "AllocateResponse：启动配置",
+      "variant": "return",
+      "note": "envs / mounts / devices / annotations / CDI"
+    },
+    {
+      "id": "rpc-10",
+      "from": "kubelet",
+      "to": "plugin",
+      "y": 990,
+      "label": "PreStartContainer（可选）",
+      "variant": "default",
+      "note": "仅声明需要时；不是每个插件必经步骤"
+    },
+    {
+      "id": "rpc-11",
+      "from": "plugin",
+      "to": "kubelet",
+      "y": 1090,
+      "label": "启动前准备响应（可选）",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "如何读箭头",
+      "items": [
+        "Register 访问 kubelet.sock；其他 RPC 访问插件自己的 socket。",
+        "ListAndWatch 是 kubelet 发起的一次服务端流式 RPC；插件沿响应流持续发送完整列表。",
+        "图是 v1beta1 API 契约的教学时序，不是抓包结果；Node 发布与 CRI 不属于这组 RPC。"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "可选调用与交接边界",
+      "items": [
+        "GetPreferredAllocation 仅声明支持时调用，返回偏好不保证被采用。",
+        "PreStartContainer 仅声明需要时在启动前调用。",
+        "Allocate 只有设备 ID 分组，没有 Pod UID 或显存预算；响应是容器配置，不是 CUDA 分配。"
+      ]
+    }
+  ]
+}

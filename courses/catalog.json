@@ -4,8 +4,8 @@
     "number": "01",
     "slug": "hami-01",
     "title": "HAMi 第一课：Pod 怎么拿到一张卡",
-    "summary": "沿请求、选卡、绑定、设备交付追踪一次 Pod 启动，拆清各组件的输入、状态和证据。",
-    "diagram": "hami-pod-card"
+    "summary": "先拆 GPU 发现、两个 Unix Socket、Device Plugin gRPC 和 Node 资源上报，再追踪 Pod 分配与 HAMi 共享扩展。",
+    "diagram": "hami-device-protocol"
   },
   {
     "part": "hami",

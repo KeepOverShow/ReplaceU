@@ -13,3 +13,5 @@ node /path/to/archify/bin/archify.mjs finalize architecture diagrams/hami-overvi
 显存原理课新增 `hami-handoff` 配置交付图，更新 `hami-runtime` 为源码关联的时序图。两图分别固定 HAMi 与其引用的 HAMi-core 提交，重新生成时必须提供各自 `--repo-root`，详见显存机制实验的 source-lock.json。
 
 `hami-pod-card`：第一课的 Pod 请求到启动配置交接图，固定 HAMi v2.7.0 源码；Kubernetes 与运行时内部过程折叠在箭头中。
+
+`hami-device-protocol`：第一课的 Device Plugin gRPC 主图，基于 kubelet v0.31.10 的 api.proto，区分注册方向、服务端流与可选调用。`hami-pod-card` 保留为本课 HAMi 扩展图。
