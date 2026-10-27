@@ -230,5 +230,21 @@
     "start": 513,
     "end": 519,
     "code": "if plugin.operatingMode != \"mig\" {\n  for i, dev := range devreq {\n    limitKey := fmt.Sprintf(\"CUDA_DEVICE_MEMORY_LIMIT_%v\", i)\n    response.Envs[limitKey] = fmt.Sprintf(\"%vm\", dev.Usedmem)\n  }\n  response.Envs[\"CUDA_DEVICE_SM_LIMIT\"] = fmt.Sprint(devreq[0].Usedcores)\n  response.Envs[\"CUDA_DEVICE_MEMORY_SHARED_CACHE\"] = fmt.Sprintf(\"%s/vgpu/%v.cache\", hostHookPath, uuid.New().String())"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 665,
+    "end": 670,
+    "code": "// Gets Devices in use.\ndevicesInUse := m.allocatedDevices[resource]\n// Gets Available devices.\navailable := m.healthyDevices[resource].Difference(devicesInUse)\nif available.Len() < needed {\n  return nil, fmt.Errorf(\"requested number of devices unavailable for %s. Requested: %d, Available: %d\", resource, needed, available.Len())"
+  },
+  {
+    "repository": "https://github.com/kubernetes/kubernetes",
+    "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
+    "path": "pkg/kubelet/cm/devicemanager/manager.go",
+    "start": 843,
+    "end": 852,
+    "code": "// Updates allocatedDevices to garbage collect any stranded resources\n// before doing the device plugin allocation.\nif !allocatedDevicesUpdated {\n  m.UpdateAllocatedDevices()\n  allocatedDevicesUpdated = true\n}\nallocDevices, err := m.devicesToAllocate(podUID, contName, resource, needed, devicesToReuse[resource])\nif err != nil {\n  return err\n}"
   }
 ]

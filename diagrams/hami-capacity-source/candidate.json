@@ -2,10 +2,10 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "从设备列表到 Node：GetCapacity 源码链路",
+    "title": "HAMi 第一课：Node 数量与容器设备 ID 的两条路径",
     "locale": "zh-CN",
     "quality_profile": "showcase",
-    "output": ".archify/architecture-capacity-source-20261026/diagram.html",
+    "output": "diagrams/hami-capacity-source/diagram.html",
     "repository": {
       "url": "https://github.com/kubernetes/kubernetes.git",
       "revision": "61183587c03f420214aac57f81dc0ecb43e1b0d6",
@@ -117,6 +117,48 @@
           "end_line": 377
         }
       ]
+    },
+    {
+      "id": "selection",
+      "type": "backend",
+      "label": "按 ID 选择空闲设备",
+      "sublabel": "devicesToAllocate()",
+      "pos": [
+        500,
+        340
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/devicemanager/manager.go",
+          "line": 571,
+          "end_line": 695
+        }
+      ]
+    },
+    {
+      "id": "allocate",
+      "type": "backend",
+      "label": "请求设备插件配置容器",
+      "sublabel": "allocateContainerResources() → Allocate",
+      "pos": [
+        500,
+        490
+      ],
+      "size": [
+        370,
+        82
+      ],
+      "sources": [
+        {
+          "path": "pkg/kubelet/cm/devicemanager/manager.go",
+          "line": 827,
+          "end_line": 862
+        }
+      ]
     }
   ],
   "connections": [
@@ -147,6 +189,19 @@
       "to": "setter",
       "label": "通过注入回调消费结果",
       "variant": "emphasis"
+    },
+    {
+      "id": "healthy-to-select",
+      "from": "callback",
+      "to": "selection",
+      "label": "健康 ID 集合"
+    },
+    {
+      "id": "select-to-allocate",
+      "from": "selection",
+      "to": "allocate",
+      "label": "选定设备 ID",
+      "variant": "emphasis"
     }
   ],
   "cards": [
@@ -166,6 +221,15 @@
         "健康数赋给 capacity 和 allocatable；不健康数只加到 capacity。",
         "端点失效会触发清理，失效资源名交给 Setter 将容量设为 0。",
         "GetCapacity 解锁后才调用再次加锁的 writeCheckpoint，返回值和落盘不是一个原子事务。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "数量与设备 ID 是两条读路径",
+      "items": [
+        "GetCapacity 统计健康/不健康设备，构造 Node 的 capacity 与 allocatable 数量。",
+        "devicesToAllocate 从 healthyDevices 中减去 allocatedDevices，再处理可重用设备、NUMA 与插件偏好，选择具体 ID。",
+        "因此“Node 数量仍为 2”不意味着同一个 ID 可交给两个容器；要继续审计本地分配状态和 Allocate 交接。"
       ]
     }
   ]
