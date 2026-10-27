@@ -40,7 +40,7 @@ def build():
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
  for reference in (ROOT/'courses/reference').glob('*.html'):

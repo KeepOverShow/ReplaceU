@@ -10,3 +10,5 @@ node_modules/
 .DS_Store
 .archify/**/browser-check*/
 .archify/
+diagrams/**/diagram.*.json
+diagrams/**/review-*/

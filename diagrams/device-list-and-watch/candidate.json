@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Device Plugin：ListAndWatch",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/device-list-and-watch/diagram.html"
+  },
+  "participants": [
+    { "id": "kubelet", "type": "backend", "label": "kubelet", "sublabel": "Device Manager" },
+    { "id": "hami", "type": "backend", "label": "HAMi 插件", "sublabel": "本机 Unix Socket" }
+  ],
+  "segments": [
+    { "from": 155, "to": 315, "label": "建立 gRPC 响应流" },
+    { "from": 330, "to": 595, "label": "每次发送完整设备列表" }
+  ],
+  "messages": [
+    { "id": "call", "from": "kubelet", "to": "hami", "y": 180, "label": "ListAndWatch(Empty)", "variant": "emphasis" },
+    { "id": "initial", "from": "hami", "to": "kubelet", "y": 260, "label": "Devices=[A 健康, B 健康]", "variant": "return" },
+    { "id": "health", "from": "hami", "to": "kubelet", "y": 390, "label": "Devices=[A 故障, B 健康]", "variant": "return", "note": "健康变化：A 仍在列表中，但标为 Unhealthy" },
+    { "id": "removed", "from": "hami", "to": "kubelet", "y": 515, "label": "若下一帧为 [B 健康]", "variant": "return", "note": "协议语义示意：A 已移除；不是上述 HAMi 健康事件的实际发送路径" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "读图要点", "items": [
+      "kubelet 调用插件；HAMi 在同一条流上多次响应。",
+      "每帧都是完整设备列表，不是单个设备事件。",
+      "HAMi v2.7 的健康事件会保留 A 并标为故障；[B] 是协议语义示例。",
+      "A/B 代表按 DeviceSplitCount 生成的插件设备 ID。"
+    ] }
+  ]
+}

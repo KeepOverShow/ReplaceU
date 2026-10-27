@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Kubernetes API：List + Watch",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "diagrams/api-list-watch/diagram.html"
+  },
+  "participants": [
+    { "id": "controller", "type": "backend", "label": "控制器", "sublabel": "API 客户端" },
+    { "id": "apiserver", "type": "backend", "label": "API Server", "sublabel": "Pod 等 API 对象" }
+  ],
+  "segments": [
+    { "from": 155, "to": 300, "label": "先取得当前状态" },
+    { "from": 315, "to": 580, "label": "再订阅对象变化" }
+  ],
+  "messages": [
+    { "id": "list", "from": "controller", "to": "apiserver", "y": 175, "label": "List Pods", "variant": "emphasis" },
+    { "id": "list-result", "from": "apiserver", "to": "controller", "y": 250, "label": "[A, B] + resourceVersion=100", "variant": "return" },
+    { "id": "watch", "from": "controller", "to": "apiserver", "y": 335, "label": "Watch Pods，从版本 100 起", "variant": "emphasis" },
+    { "id": "modified", "from": "apiserver", "to": "controller", "y": 415, "label": "MODIFIED B", "variant": "return" },
+    { "id": "deleted", "from": "apiserver", "to": "controller", "y": 505, "label": "DELETED A", "variant": "return", "note": "每条消息描述一个对象变化；客户端维护自己的对象缓存" }
+  ],
+  "cards": [
+    { "dot": "emerald", "title": "读图要点", "items": [
+      "List 先给出对象快照和 resourceVersion。",
+      "Watch 随后给出单个对象的变化事件。",
+      "A 消失时，客户端可收到 DELETED A。"
+    ] }
+  ]
+}
