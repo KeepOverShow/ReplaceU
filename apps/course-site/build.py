@@ -19,7 +19,7 @@ def build():
  for name in ['index.html','catalog.html']:(SITE/name).write_text(page('课程目录',index))
  for entry in manifest:
   d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
-  body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p>'+d.get('lead','')+'<details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">判断与复述</a>'+d.get('toc','')+'</nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
+  body='<p class="kicker">'+PARTS[d['part']]+' / '+d['number']+'</p><h1>'+d['title']+'</h1><p>'+d['summary']+'</p>'+d.get('lead','')+'<details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">选择题与解析</a>'+d.get('toc','')+'</nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/'+diagram+'.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="'+d['title']+'知识主图" src="../reference/'+diagram+'.html" loading="lazy"></iframe></section>'
   if d.get('map_collapsed'):
    body=body.replace('<section id="map">','<details id="map"><summary>展开 Archify 源码链路图</summary><section>').replace('</iframe></section>','</iframe></section></details>')
   script=d.get('script','')
@@ -33,8 +33,13 @@ def build():
   if d.get('memory_lab'):script+=js3
   if slug=='practice-02':script+=js2
   if d['choices']:
-   body+='<section id="check"><h2>先判断，再用自己的话解释</h2><div id="checkQuiz" class="choices">'+''.join('<button>'+c+'</button>' for c in d['choices'])+'<output aria-live="polite">选择一个答案。</output></div><textarea data-note="'+d.get('note_key',slug)+'" placeholder="沿图复述：输入是什么，谁决定，结果如何验证？" rows="4"></textarea><p>把答案发回对话，我会先核对你的理解，再继续下一步。</p></section>'
-   script+='quiz("checkQuiz",'+str(d['correct'])+','+json.dumps(d['feedback'],ensure_ascii=False)+');'
+   quizzes=[{'question':d.get('question','请选择正确说法：'),'choices':d['choices'],'correct':d['correct'],'feedback':d['feedback']}]+d.get('extra_quizzes',[])
+   body+='<section id="check"><h2>选择题与解析</h2>'
+   for i,q in enumerate(quizzes):
+    quiz_id='checkQuiz'+str(i)
+    body+='<div class="quiz-question"><p><b>'+str(i+1)+'.</b> '+escape(q['question'])+'</p><div id="'+quiz_id+'" class="choices">'+''.join('<button type="button">'+escape(c)+'</button>' for c in q['choices'])+'<output aria-live="polite">请选择一个答案。</output></div></div>'
+    script+='quiz('+json.dumps(quiz_id)+','+str(q['correct'])+','+json.dumps(q['feedback'],ensure_ascii=False)+');'
+   body+='</section>'
   siblings=[x for x in manifest if x['part']==d['part']]
   pos=next(i for i,x in enumerate(siblings) if x['slug']==slug)
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
