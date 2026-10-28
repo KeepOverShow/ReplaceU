@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HAMi 两级评分：节点与 GPU",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      690
+    ],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "output": "diagrams/hami-scoring/diagram.html",
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi.git",
+      "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+      "link_mode": "web"
+    }
+  },
+  "participants": [
+    {
+      "id": "filter",
+      "type": "backend",
+      "label": "Filter",
+      "sublabel": "调度入口",
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 500,
+          "end_line": 510
+        },
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 524,
+          "end_line": 526
+        }
+      ]
+    },
+    {
+      "id": "node",
+      "type": "backend",
+      "label": "节点评分",
+      "sublabel": "已有分配",
+      "sources": [
+        {
+          "path": "pkg/scheduler/score.go",
+          "line": 151,
+          "end_line": 159
+        },
+        {
+          "path": "pkg/scheduler/policy/node_policy.go",
+          "line": 48,
+          "end_line": 53
+        },
+        {
+          "path": "pkg/scheduler/policy/node_policy.go",
+          "line": 75,
+          "end_line": 95
+        }
+      ]
+    },
+    {
+      "id": "gpu",
+      "type": "backend",
+      "label": "设备评分",
+      "sublabel": "已有分配 + 本次请求",
+      "sources": [
+        {
+          "path": "pkg/scheduler/policy/gpu_policy.go",
+          "line": 45,
+          "end_line": 78
+        },
+        {
+          "path": "pkg/scheduler/score.go",
+          "line": 86,
+          "end_line": 102
+        }
+      ]
+    },
+    {
+      "id": "fit",
+      "type": "backend",
+      "label": "GPU Fit",
+      "sublabel": "逐卡检查",
+      "sources": [
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 684,
+          "end_line": 699
+        },
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 722,
+          "end_line": 752
+        },
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 773,
+          "end_line": 788
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "n",
+      "from": "filter",
+      "to": "node",
+      "y": 160,
+      "label": "计算节点已有使用比例",
+      "variant": "default"
+    },
+    {
+      "id": "g",
+      "from": "node",
+      "to": "gpu",
+      "y": 215,
+      "label": "计算并按 GPU 策略排序",
+      "variant": "default"
+    },
+    {
+      "id": "f",
+      "from": "gpu",
+      "to": "fit",
+      "y": 270,
+      "label": "从排序结果末尾尝试设备",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ok",
+      "from": "fit",
+      "to": "node",
+      "y": 325,
+      "label": "返回可分配设备或失败",
+      "variant": "return"
+    },
+    {
+      "id": "res",
+      "from": "node",
+      "to": "filter",
+      "y": 380,
+      "label": "返回满足条件的节点与设备",
+      "variant": "return"
+    },
+    {
+      "id": "select",
+      "from": "filter",
+      "to": "node",
+      "y": 435,
+      "label": "按节点策略排序并选择",
+      "variant": "emphasis"
+    },
+    {
+      "id": "result",
+      "from": "node",
+      "to": "filter",
+      "y": 490,
+      "label": "返回选中节点",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "两个不同的分数",
+      "items": [
+        "设备分数考虑已有记录和本次申请。",
+        "节点默认分数基于节点已有使用情况。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "策略与约束",
+      "items": [
+        "binpack 和 spread 分别配置节点和 GPU 策略。",
+        "设备仍需通过显存、槽位、核心及其他条件。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "阅读范围",
+      "items": [
+        "GPU 排序还考虑 NUMA；课程示例假设 NUMA 一致。",
+        "P4 数值是教学模拟，不是实际 GPU 运行结果。"
+      ]
+    }
+  ]
+}
