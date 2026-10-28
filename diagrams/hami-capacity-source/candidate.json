@@ -229,7 +229,7 @@
       "items": [
         "GetCapacity 统计健康/不健康设备，构造 Node 的 capacity 与 allocatable 数量。",
         "devicesToAllocate 从 healthyDevices 中减去 allocatedDevices，再处理可重用设备、NUMA 与插件偏好，选择具体 ID。",
-        "因此“Node 数量仍为 2”不意味着同一个 ID 可交给两个容器；要继续审计本地分配状态和 Allocate 交接。"
+        "本课模拟 allocatable=10；已占用 1 个槽位后仍报告 10，需另查设备 ID 分配状态。"
       ]
     }
   ]
