@@ -45,12 +45,12 @@ def build():
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
  for reference in (ROOT/'courses/reference').glob('*.html'):
   shutil.copy2(reference,SITE/'reference'/reference.name)
- for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-03'}.items():
+ for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-04'}.items():
   (SITE/'lessons'/(old+'.html')).write_text('<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0;url='+new+'.html"><a href="'+new+'.html">课程已按三部分重组，继续学习</a>')
  print('Built',len(manifest),'lessons in',len(PARTS),'parts')
 if __name__=='__main__':build()

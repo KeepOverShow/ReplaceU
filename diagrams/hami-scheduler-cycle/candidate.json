@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "HAMi 调度：P4 请求如何选择与绑定",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      690
+    ],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi.git",
+      "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+      "link_mode": "web"
+    },
+    "output": "diagrams/hami-scheduler-cycle/diagram.html"
+  },
+  "participants": [
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "API Server",
+      "sublabel": "Pod 与绑定",
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 443,
+          "end_line": 462
+        }
+      ]
+    },
+    {
+      "id": "webhook",
+      "type": "backend",
+      "label": "HAMi Webhook",
+      "sublabel": "准入阶段",
+      "sources": [
+        {
+          "path": "pkg/scheduler/webhook.go",
+          "line": 63,
+          "end_line": 96
+        }
+      ]
+    },
+    {
+      "id": "kube",
+      "type": "backend",
+      "label": "kube-scheduler",
+      "sublabel": "调度周期",
+      "sources": [
+        {
+          "path": "charts/hami/templates/scheduler/configmapnew.yaml",
+          "line": 18,
+          "end_line": 25
+        }
+      ]
+    },
+    {
+      "id": "ext",
+      "type": "backend",
+      "label": "HAMi Extender",
+      "sublabel": "过滤、选卡、绑定",
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 481,
+          "end_line": 552
+        },
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 421,
+          "end_line": 478
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "admit",
+      "from": "api",
+      "to": "webhook",
+      "y": 160,
+      "label": "Pod 准入请求",
+      "variant": "default"
+    },
+    {
+      "id": "mutate",
+      "from": "webhook",
+      "to": "api",
+      "y": 215,
+      "label": "返回修改后的 Pod",
+      "variant": "return"
+    },
+    {
+      "id": "filter",
+      "from": "kube",
+      "to": "ext",
+      "y": 270,
+      "label": "Filter：Pod 与候选节点",
+      "variant": "emphasis"
+    },
+    {
+      "id": "patch",
+      "from": "ext",
+      "to": "api",
+      "y": 325,
+      "label": "写入设备分配注解",
+      "variant": "default"
+    },
+    {
+      "id": "filter-result",
+      "from": "ext",
+      "to": "kube",
+      "y": 380,
+      "label": "返回选中的节点",
+      "variant": "return"
+    },
+    {
+      "id": "bind",
+      "from": "kube",
+      "to": "ext",
+      "y": 435,
+      "label": "Bind：Pod 与节点",
+      "variant": "emphasis"
+    },
+    {
+      "id": "binding",
+      "from": "ext",
+      "to": "api",
+      "y": 490,
+      "label": "更新阶段并发起绑定",
+      "variant": "default"
+    },
+    {
+      "id": "result",
+      "from": "ext",
+      "to": "kube",
+      "y": 545,
+      "label": "返回绑定结果",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "先筛选，再绑定",
+      "items": [
+        "HAMi Filter 在 Kubernetes 节点过滤后参与。",
+        "HAMi 在 Filter 内选择设备并记录分配信息。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "阶段不要混淆",
+      "items": [
+        "Kubernetes 的 Assume 和 Reserve 在过滤后执行。",
+        "HAMi 的预先记录不等于 Kubernetes 的 Assume。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "学习场景",
+      "items": [
+        "P4 数据为模拟案例，实际集群结果以现场为准。",
+        "设备真正可用与运行时限制需要另外验证。"
+      ]
+    }
+  ]
+}

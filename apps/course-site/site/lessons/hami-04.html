@@ -1,0 +1,212 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HAMi 第四课：HAMi-core 原理拆解 · ReplaceU</title><style>*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#192b3c;font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}header{background:#102c40;color:#fff;padding:18px max(5vw,18px)}header a{color:#b8f6e6}nav{display:flex;justify-content:space-between;gap:16px;max-width:940px;margin:auto}main{max-width:780px;margin:24px auto;padding:0 20px 42px}h1{font-size:clamp(26px,3.5vw,30px);line-height:1.3;letter-spacing:-.02em;margin:14px 0 10px}h2{font-size:19px;line-height:1.4;margin:26px 0 10px}h3{font-size:16px;line-height:1.45;margin:14px 0 7px}a{color:#006e65}p{margin:8px 0}small,.muted{color:#536878}.kicker{color:#087f73;font-size:13px;font-weight:700;letter-spacing:.08em}.card,section{padding:18px;background:white;border:1px solid #dbe3e9;border-radius:13px;margin:14px 0}.hint{font-size:14px;line-height:1.55;background:#e9f4f1;border-left:4px solid #168c77;padding:16px 20px;border-radius:8px}.boundary{background:#fff5dd;border:1px solid #ebd29a;padding:14px 18px;border-radius:8px;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.grid .card{margin:0}button,.button{display:inline-block;border:0;border-radius:9px;background:#087b6d;color:#fff;padding:11px 17px;font-family:inherit;font-size:15px;font-weight:600;line-height:1.5;cursor:pointer;text-decoration:none;margin:5px 6px 5px 0;min-height:48px}button.secondary,.secondary{background:#e7eef2;color:#213d50}button:disabled{opacity:.5}button:focus-visible,a:focus-visible{outline:3px solid #efb41f;outline-offset:3px}pre{background:#112d40;color:#cde9f1;padding:18px;border-radius:9px;white-space:pre-wrap;overflow-wrap:anywhere;font:11px/1.6 ui-monospace,monospace}code{overflow-wrap:anywhere}output{display:block;margin-top:16px;padding:16px;background:#eef5f8;border-radius:8px;min-height:58px;white-space:pre-wrap}.choices{display:grid;gap:8px}.choices button{text-align:left;background:#eaf0f4;color:#173447}.lesson-stops{display:flex;flex-wrap:wrap;gap:6px}.lesson-stops button{margin:0;flex:1 1 120px}.lesson-stops button[aria-pressed="true"]{background:#087b6d;color:white}#stopText{min-height:250px}.lesson-toc{position:sticky;top:8px;z-index:20;background:#fff;border:1px solid #bccfd5;border-radius:12px;padding:12px 16px;box-shadow:0 3px 14px #102c4010}.lesson-toc summary{font-weight:700}.lesson-toc nav{display:grid;gap:0;padding-top:8px}.lesson-toc a{display:block;padding:9px 0;border-top:1px solid #e5eded}.lesson-toc[open]{max-height:70vh;overflow:auto}section[id]{scroll-margin-top:88px}header nav{flex-wrap:wrap}.feedback{color:#006255;font-weight:600}progress{width:100%;height:18px;accent-color:#168c77}.status{display:inline-block;background:#dcefe9;padding:3px 10px;border-radius:30px;font-size:13px}details{margin:14px 0}summary{cursor:pointer;color:#06766c}footer{padding:25px 20px;text-align:center;font-size:13px;color:#607583}iframe{width:100%;height:650px;border:1px solid #dbe3e9;border-radius:12px}li{margin:10px 0}.step{font-size:13px;color:#61798a}.big{font-size:30px;font-weight:750}.linkrow{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}.table{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:9px;text-align:left;border-bottom:1px solid #dce4e9}textarea{width:100%;font:inherit;border:1px solid #aabcc9;padding:12px;border-radius:8px}label{display:block;margin:8px 0}.saved{font-size:13px;color:#607583}@media(max-width:600px){body{font-size:14px;line-height:1.62}main{margin-top:14px;padding:0 14px 30px}h1{font-size:24px;line-height:1.32;margin:11px 0 9px}h2{font-size:18px;margin:22px 0 9px}h3{font-size:16px;margin:12px 0 6px}.grid{grid-template-columns:1fr}section,.card{padding:14px;margin:12px 0;border-radius:11px}iframe{height:480px}button,.button{max-width:100%;font-size:13px;padding:9px 12px}nav{font-size:14px}.big{font-size:24px}}@media print{button,iframe,nav{display:none}body{background:#fff}section{break-inside:avoid}}h3[id]{scroll-margin-top:88px}</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">三部分课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main><p class="kicker">第一部分 · HAMi 专题 / 04</p><h1>HAMi 第四课：HAMi-core 原理拆解</h1><p>分三段学习：启动配置如何交付 → 一次调用如何执行 → 并发、失败与证据如何追问。</p><div class="hint"><b>这课要教会你：</b>独立追踪一条 CUDA 显存调用，解释每个参与者的输入、状态变化、输出与故障边界。会算预算只是起点。</div><p>建议分三次学习，每次 10–15 分钟：先读准备链路，再读运行时和账本，最后做失败实验与工程追问。每段都要能回到源码定位。</p><div class="boundary">基线：HAMi v2.7.0 / f754a8c；其 libvgpu 引用 HAMi-core 3506e62。它们是本课源码阅读基线，不是当前课程服务器的 GPU 部署版本。网页实验和调用轨迹均为教学模型。</div><details class="lesson-toc"><summary>本课目录</summary><nav><a href="#map">知识主图</a><a href="#explain">逐步讲解</a><a href="#check">选择题与解析</a><a href="#cold">启动前谁参与</a><a href="#hot">运行时谁参与</a><a href="#ledger">账本与释放</a><a href="#failures">失败的价值</a><a href="#race">并发追问</a><a href="#trace-lab">逐步调用实验</a><a href="#field">如何独立验证</a><a href="#recall">开放问题</a></nav></details><section id="map"><h2>先沿主图串起知识</h2><a href="../reference/hami-handoff.html" target="_blank">打开完整 Archify 图 ↗</a><iframe title="HAMi 第四课：HAMi-core 原理拆解知识主图" src="../reference/hami-handoff.html" loading="lazy"></iframe></section><section id="explain"><h2>逐步讲解</h2><h3 id="cold">第一段 · 显存申请发生以前，谁已经做过什么？</h3><p>把“运行一个 Pod”和“申请一次显存”分开看。前者建立配置，后者在应用进程内部执行。不能把所有组件画成每次调用都经过的串行链路。</p>
+<div class="hint"><b>1. Webhook：决定准入阶段怎样改写 Pod。</b><p>输入是 Pod 资源声明；输出包括满足处理条件时设置的 schedulerName。它不读取应用当前显存使用量，也不审批每次 cudaMalloc。</p></div>
+<div class="hint"><b>2. kube-scheduler + HAMi Extender：决定放在哪里。</b><p>输入包括 Pod 请求与设备状态，输出是节点、设备和预算的分配记录。调度层的预算是资源规划依据，不是已经分配的 CUDA 指针。</p></div>
+<div class="hint"><b>3. kubelet + HAMi device-plugin：准备容器能看见什么。</b><p>在本版本非 MIG 共享分支，插件读取分配注解，生成 CUDA_DEVICE_MEMORY_LIMIT_i、CUDA_DEVICE_SM_LIMIT 和共享缓存位置，挂载 libvgpu.so；默认控制分支还挂载 /etc/ld.so.preload。它把 AllocateResponse 交给 kubelet，由启动链路落实配置。</p></div>
+<div class="hint"><b>4. 容器加载器 + HAMi-core：把配置变成进程中的行为。</b><p>动态库必须真正进入目标进程，相关 CUDA 调用必须命中 Hook。宿主机有库、容器里有文件、环境变量存在，都不等于进程已经走了受控路径。这个版本不只依赖 LD_PRELOAD 环境变量，排查时还要看 /etc/ld.so.preload。</p></div>
+<p>源码依据：<a href="https://github.com/Project-HAMi/HAMi/blob/f754a8c4621d969aba4c7c10b1d1d6d41fe6b530/pkg/device-plugin/nvidiadevice/nvinternal/plugin/server.go#L491-L565" target="_blank" rel="noopener">设备插件 Allocate 的配置交付分支</a>；<a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/multiprocess/multiprocess_memory_limit.c#L156-L172" target="_blank" rel="noopener">运行库读取每设备限额与回退限额</a>。</p><p><b>工程用途：</b>超限仍成功时，先检查这条准备链路：请求是否被接管、设备分配是否匹配、预算和缓存是否交付、目标进程是否加载。不要直接从应用现象跳到“调度器坏了”。</p>
+<h3 id="hot">第二段 · 一次显存申请，真正走过哪些函数？</h3><p>现在假定容器准备正确、当前线程已有正确 CUDA context，只讨论同步 cuMemAlloc_v2。应用可以由 CUDA Runtime 或框架间接发起调用，本课从 Driver API Hook 入口展开；不把 async、memory pool、managed memory 视作完全相同路径。</p>
+<a class="button secondary" href="../reference/hami-runtime.html" target="_blank" rel="noopener">打开源码关联的运行时图 ↗</a><iframe title="显存申请、两类失败与释放的源码时序" src="../reference/hami-runtime.html" loading="lazy"></iframe>
+<ol><li><b>截获入口：</b>HAMi-core 的 cuMemAlloc_v2 包装函数进入 allocate_raw；它不是向调度器发送一次 RPC。见 <a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/cuda/memory.c#L129-L142" target="_blank" rel="noopener">cuMemAlloc_v2 → allocate_raw</a>.</li><li><b>确定设备和限额：</b>取当前 CUDA context 对应设备，读取该设备的逻辑 limit，汇总共享区域中记录的 usage。见 <a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/allocator/allocator.c#L36-L61" target="_blank" rel="noopener">oom_check：读取 limit 与 usage</a> 与 <a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/multiprocess/multiprocess_memory_limit.c#L243-L255" target="_blank" rel="noopener">get_gpu_memory_usage：汇总共享区域</a>.</li><li><b>检查：</b>若 limit 非零且 usage + request 超限，返回 CUDA_ERROR_OUT_OF_MEMORY，不走真实显存分配分支。设备与 context 查询仍可能调用 Driver，不能泛化为“完全没有 Driver 调用”。limit 为 0 时该检查分支不施加此预算上限，所以还要核对配置解析结果。这里的量是账本口径，不等同于 nvidia-smi 的整卡数值。</li><li><b>调用底层：</b>预算通过后调用真实分配函数。当前基线 add_chunk 的大小分支最终都可追到真实 cuMemAlloc_v2；预算许可不等于物理资源保证。</li><li><b>按返回值记账：</b>底层失败则把错误返回，未进入成功记账分支；底层成功才登记地址、大小并更新使用量。见 <a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/allocator/allocator.c#L103-L130" target="_blank" rel="noopener">add_chunk：先检查，再调用，成功才记账</a>.</li><li><b>应用处理结果：</b>得到成功指针才继续使用；失败后由应用或框架决定降负载、释放后重试、报错或退出。该同步申请路径本身并不等于 Kubernetes 自动重调度。</li></ol>
+<pre>本课基线同步路径的简化伪代码（不是完整源码）
+lock(process_local_mutex)
+if tracked_usage + request > nonzero_limit:
+    return OOM                # 不调用真实显存分配函数
+result = real_driver_allocate(request)
+if result != SUCCESS:
+    return result             # 不登记成功分配
+record_pointer_and_increment_usage()
+return SUCCESS
+# 各出口的解锁由 allocate_raw 包装层完成</pre>
+<details><summary>把“拦截”再拆一层：为什么函数会先进入 HAMi-core？</summary><p>预加载把 libvgpu.so 放进动态链接过程；同名 CUDA 包装符号先执行限制逻辑。本版本还包装 dlsym：对 cu 开头的符号尝试从 vgpu 库解析；cuGetProcAddress 也有包装路径，用于处理通过函数指针取得入口的调用。单说“LD_PRELOAD 一加就都受控”遗漏了符号解析方式与 API 覆盖。</p><p>进入包装函数后，库通过 cuda_library_entry 中保存的真实函数指针调用原始 Driver，而不是再按同名包装入口递归调用自己。CUDA_OVERRIDE_CALL 是这一层间接调用宏。这里仍是同一进程中的用户态函数调用；只有最终 Driver 操作才进入其设备管理路径，不是把请求发回 Kubernetes。</p><p>查源码：<a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/libvgpu.c#L72-L119" target="_blank" rel="noopener">dlsym 包装</a>、<a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/cuda/hook.c#L344-L373" target="_blank" rel="noopener">cuGetProcAddress 包装</a>、<a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/include/libcuda_hook.h#L29-L38" target="_blank" rel="noopener">真实函数指针调用宏</a>。</p><p><b>进一步问：</b>库加载了，但某个新 API 没有命中包装，会发生什么？答案需要对照该版本的符号表、调用方式和实际轨迹；不能拿 cuMemAlloc_v2 的结果覆盖所有 API。</p></details><p><b>为什么这样设计？</b>把每次申请留在用户态调用路径，避免逐次依赖控制面往返；代价是正确性依赖加载、API 覆盖、设备编号、共享状态与版本实现。延迟收益要用基准测量，本课不提供没有测量的性能数字。</p>
+<h3 id="ledger">第三段 · 账本是谁的？释放以后改变了什么？</h3><p>在该源码中，get_gpu_memory_usage 汇总共享区域内多个进程的记录，并含初始偏移；共享区域通过缓存文件 mmap。它不是浏览器传来的一个 used 参数，也不只是当前进程的一个普通变量。</p><p>插件生成共享缓存位置，意味着验证时必须问：哪些进程实际映射到同一份缓存？设备编号是否对应同一 GPU？两个容器是否真的共享同一预算域？不能因为同节点、同 GPU 就断言它们共用同一份运行时账本。</p>
+<p>跟踪过的指针进入 cuMemFree_v2 → free_raw → remove_chunk 后，源码调用底层释放并扣减运行时记账。见 <a href="https://github.com/Project-HAMi/HAMi-core/blob/3506e6222ca0f235cb745bc805832f422c484c17/src/allocator/allocator.c#L165-L179" target="_blank" rel="noopener">remove_chunk：释放并扣减使用量</a>。但该旧版本 remove_chunk 未依据 cuMemoryFree 返回值决定是否扣账；正常路径能解释释放，异常路径仍必须实验验证，不能称为完备事务。</p>
+<div class="boundary"><b>两本账不能混：</b>运行时使用量下降，不代表 Pod 的调度预算已经释放。比如 Pod 仍申请 4 GiB，应用释放 2 GiB，只能说明运行时占用可能下降；该申请额度何时归还，要看 Pod 生命周期与调度层回收。强杀进程、缓存陈旧、框架保留池内存，也不能一概等同于一次正常 cuMemFree。</div>
+<p><b>工程用途：</b>解释“任务已释放内存，为什么别的任务还 Pending”，以及“进程已经退出，为什么账本仍显示使用”。先定位是哪本账，再找回收责任方。</p>
+<h3 id="failures">第四段 · 两种失败看起来相同，处理方法却不同</h3>
+<div class="hint"><b>预算侧拒绝：</b>模型中 2 + 3 > 4，真实显存分配函数没被调用。应核对限额、账本、工作集与请求是否合理；单纯增加整卡空闲显存不一定解除逻辑限额。</div>
+<div class="hint"><b>底层分配失败：</b>模型中 2 + 1 ≤ 4，真实显存分配函数被调用但失败。应检查物理资源、其他进程、设备或 context 状态与具体错误；只提高逻辑额度不一定有用。</div>
+<p>同为 CUDA_ERROR_OUT_OF_MEMORY 不能单凭错误码归因。要关联 Hook 日志的 usage/limit/request、是否走到真实分配调用、Driver 返回值与独立设备观测。预算通过是必要检查之一，不能作为资源可用性的充分证据。对照 <a href="https://docs.nvidia.com/cuda/cuda-driver-api/group__CUDA__MEM.html" target="_blank" rel="noopener">NVIDIA Driver API 内存管理定义</a>。</p>
+<h3 id="race">第五段 · 顶尖工程师会追问：检查和记账之间，能插进另一个进程吗？</h3>
+<p>共同账本已用 2 GiB，A、B 两个进程各申请 1.5 GiB。若两者都在对方记账前读到 2 GiB，两次检查都会通过；若底层都成功，最终可能记到 5 GiB。<b>读、写各自加锁，不等于“检查—调用—记账”整体原子。</b></p>
+<p>本课基线 allocate_raw 的 mutex 是进程内互斥；共享账本的局部读写另有锁。由源码顺序可以提出上述跨进程交错反例，但本机没有执行上游 CUDA 并发复现，不能把推理冒充硬件实测。</p>
+<details><summary>继续向下追：怎么改，改完又会出现什么问题？</summary><p>一个改法是在共享锁下完成检查与额度预留，再把昂贵的 Driver 调用移到锁外；底层失败时回滚预留。新的问题是：预留后崩溃怎么清理？回滚是否重复执行？设备编号是否映射正确？async 分配何时完成、何时记账？释放失败能否导致账实不符？</p><p>作为独立版本比较，<a href="https://github.com/Project-HAMi/HAMi-core/blob/cdb5260760f16221c027ffeedb747c38a2f4deb5/src/allocator/allocator.c#L80-L94" target="_blank" rel="noopener">较新提交的 reserve/release</a> 与 <a href="https://github.com/Project-HAMi/HAMi-core/blob/cdb5260760f16221c027ffeedb747c38a2f4deb5/src/allocator/allocator.c#L173-L202" target="_blank" rel="noopener">分配失败回滚路径</a>已经体现共享预留思路。它不是 v2.7.0 这条基线，不能由此认定所有版本或所有 API 均解决了并发问题。</p></details>
+<h3 id="trace-lab">第六段 · 逐步调用实验：观察参与者和状态变化</h3><p>选择场景，每点一次“下一步”只揭示一个动作。每一步都回答：谁执行、真实分配/释放函数是否执行、账本是否改变、是否调用调度器。</p><div class="boundary">轨迹由仓库中的 Python 教学模型生成。Driver 失败是显式桩；并发场景是强制交错反例。它们都不加载真实 libvgpu.so，不执行 CUDA。</div>
+<div class="choices"><button data-trace="success">预算内且底层成功</button><button data-trace="budget">预算侧提前拒绝</button><button data-trace="driver">预算内但底层失败</button><button data-trace="release">释放后重新申请</button><button data-trace="race">跨进程交错反例</button></div><button id="traceNext" disabled>下一步</button><output id="traceOutput" aria-live="polite">先选择场景，再逐步解释。</output><p id="traceProgress" class="saved"></p>
+<details><summary>保留基础实验：向课程 API 发送一次预算请求</summary><p>预算 4 GiB，当前已用 <strong id="used">0 GiB</strong></p><progress id="memorybar" max="4096" value="0"></progress><button data-alloc="2048">申请 2 GiB</button><button data-alloc="3072">申请 3 GiB</button><button id="reset">重置</button><output id="memoryResult">先预测，再点击。</output><p>课程 API 接收本页 used_mib 并做算术校验；它不是有权威账本的资源隔离服务。刷新、重置或另开浏览器都不能模拟真实跨进程共享预算。</p></details>
+<h3 id="field">第七段 · 除了我们口头解释，靠什么核对？</h3><ol><li><b>固定材料：</b>记录本课两个提交、实际镜像摘要与运行环境；验证 HAMi 的 libvgpu gitlink，不能用“都是 main”代替配套关系。</li><li><b>静态核对：</b>沿入口、调用者、错误分支、记账点和释放点读取源码，区分已读到的事实与待实验的推断。</li><li><b>模型核对：</b>从 ReplaceU 克隆后运行 projects/hami-memory-lab 的测试，重建轨迹，检查“拒绝不调用真实分配函数、失败不新增成功记账、相同错误码不同根因”等不变量。通过只证明模型自洽。</li><li><b>真实验证：</b>有匹配 NVIDIA 环境后运行仓库里的 CUDA 探针；比较加载/未加载、预算内/超预算、释放后再申请，并关联进程 maps、缓存位置、日志和设备指标。并发与崩溃另列实验，不凭同步探针代替。</li><li><b>独立复现：</b>保留程序、命令、版本与原始输出，交给另一人从空环境执行。输出分“通过、失败、不确定”，缺硬件就保留待验证。</li></ol>
+<p><a href="https://github.com/KeepOverShow/ReplaceU/tree/main/projects/hami-memory-lab" target="_blank" rel="noopener">完整模型、测试、CUDA 探针和源码索引</a> · <a href="../reference/hami-evidence.html">证据记录卡</a></p>
+<h3 id="recall">第八段 · 开放追问：能解释到哪一层？</h3><ol><li>调度器已经分配 4 GiB，为什么每次申请还要检查？如果调度器暂不可达，这条本地同步调用链本身是否需要向它发 RPC？</li><li>limit 从哪来，usage 从哪来？为什么让应用自己报告 used 会失去隔离意义？</li><li>两次都报 OOM，怎样证明一次没进入真实分配，另一次进入后失败？</li><li>应用 free 了 2 GiB，为什么平台不能立刻把这 2 GiB 当成未申请资源分给别的 Pod？</li><li>多个进程怎样共同遵守一个限额？为什么一个 pthread_mutex 不自动解决跨进程竞态？</li><li>如果进程在底层成功、账本更新前崩溃，如何发现账实差异？需要什么补偿或清理机制？</li><li>如果改用 async、memory pool、不同设备编号或新版本，现有结论哪些必须重新核对？</li></ol><p>先选一个问题，用“参与者 → 状态 → 分支 → 证据 → 用途”五步讲给我。遇到不清楚的函数直接回对话问我，我们沿那条路径继续拆。</p></section><section id="check"><h2>选择题与解析</h2><div class="quiz-question"><p><b>1.</b> 请选择正确说法：</p><div id="checkQuiz0" class="choices"><button type="button">预算通过，底层必然成功</button><button type="button">预算通过，底层仍可失败</button><output aria-live="polite">请选择一个答案。</output></div></div></section><nav aria-label="课间导航"><a href="hami-03.html">上一课：HAMi 第三课：分配成功，能证明限制生效吗？</a></nav><p><a href="/course/catalog.html#hami">返回本部分目录</a></p></main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>async function api(path,body){const r=await fetch('/course/api/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});if(!r.ok)throw Error('服务响应 '+r.status);return r.json()}
+function quiz(id,correct,note){const root=document.getElementById(id),buttons=root.querySelectorAll('button');buttons.forEach((b,i)=>b.onclick=()=>{root.querySelector('output').textContent=(i===correct?'回答正确。':'回答不正确。正确答案：'+buttons[correct].textContent+'。')+'解析：'+note})}
+async function live(){const el=document.getElementById('live');if(!el)return;try{const d=await api('live');el.textContent='课程服务在线 · 已运行 '+Math.floor(d.uptime_seconds/60)+' 分钟；原工作台'+(d.workbench_reachable?'可达':'暂不可达')+'。刷新时间 '+new Date(d.checked_at*1000).toLocaleTimeString();}catch(e){el.textContent='暂时无法读取服务状态，请点击重试。'}}
+function wireNotes(){document.querySelectorAll('textarea[data-note]').forEach(e=>{try{e.value=localStorage.getItem('hami-note-'+e.dataset.note)||''}catch{}e.oninput=()=>{try{localStorage.setItem('hami-note-'+e.dataset.note,e.value)}catch{}}})}wireNotes();live();document.querySelectorAll('.lesson-toc a[href^="#"]').forEach(a=>a.addEventListener('click',()=>a.closest('details').open=false));
+const traceCases={
+  "success": {
+    "title": "预算内且底层成功",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 1024 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "Driver 成功后登记地址与使用量；向应用返回成功",
+        "used_mib": 3072,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_SUCCESS",
+        "failure_origin": null
+      }
+    ]
+  },
+  "budget": {
+    "title": "预算侧拒绝",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 3072 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core",
+        "action": "逻辑预算拒绝；不调用真实分配函数；不登记新分配",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_ERROR_OUT_OF_MEMORY",
+        "failure_origin": "budget"
+      }
+    ]
+  },
+  "driver": {
+    "title": "预算内但底层失败",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 1024 MiB；读取逻辑预算与共享账本",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "Driver → HAMi-core → 应用",
+        "action": "教学桩强制返回物理层失败；成功记账路径未执行",
+        "used_mib": 2048,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0,
+        "result": "CUDA_ERROR_OUT_OF_MEMORY",
+        "failure_origin": "driver"
+      }
+    ]
+  },
+  "release": {
+    "title": "释放后重新申请",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "应用 → HAMi-core → Driver",
+        "action": "释放已跟踪的 2048 MiB；本例假定底层释放成功",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "撤销该分配记账；Pod 的调度预算不因此自动归还",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "应用 → HAMi-core",
+        "action": "申请 3072 MiB；读取逻辑预算与共享账本",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → Driver",
+        "action": "预算通过，只取得继续调用的资格",
+        "used_mib": 0,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "HAMi-core → 共享账本",
+        "action": "Driver 成功后登记地址与使用量；向应用返回成功",
+        "used_mib": 3072,
+        "driver_alloc_calls": 1,
+        "driver_free_calls": 1,
+        "scheduler_rpc": 0,
+        "result": "CUDA_SUCCESS",
+        "failure_origin": null
+      }
+    ]
+  },
+  "race": {
+    "title": "跨进程交错反例",
+    "simulated": true,
+    "trace": [
+      {
+        "owner": "进程 A / B",
+        "action": "共享初值 2 GiB，各申请 1.5 GiB；A、B 都在对方记账前读取 2 GiB",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "两个检查窗口",
+        "action": "两边各自看到 2 + 1.5 ≤ 4；单次读和写加锁不等于整段原子",
+        "used_mib": 2048,
+        "driver_alloc_calls": 0,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      },
+      {
+        "owner": "Driver 与共享账本",
+        "action": "假定两次底层调用都成功，随后各加 1.5 GiB，合计达到 5 GiB",
+        "used_mib": 5120,
+        "driver_alloc_calls": 2,
+        "driver_free_calls": 0,
+        "scheduler_rpc": 0
+      }
+    ]
+  }
+}
+;let traceCase=null,traceIndex=0;
+function traceStep(){if(!traceCase||traceIndex>=traceCase.trace.length)return;const event=traceCase.trace[traceIndex++];document.getElementById('traceOutput').textContent='执行者：'+event.owner+'\n动作：'+event.action+'\n账本：'+event.used_mib+' MiB\n真实分配累计：'+event.driver_alloc_calls+'\n真实释放累计：'+event.driver_free_calls+'\n调度器 RPC：'+event.scheduler_rpc+(event.result?'\n返回：'+event.result:'')+(event.failure_origin?'\n归因：'+event.failure_origin:'');document.getElementById('traceProgress').textContent=traceCase.title+' · '+traceIndex+'/'+traceCase.trace.length+'；教学轨迹';document.getElementById('traceNext').disabled=traceIndex>=traceCase.trace.length;}
+document.querySelectorAll('[data-trace]').forEach(button=>button.onclick=()=>{traceCase=traceCases[button.dataset.trace];traceIndex=0;document.getElementById('traceOutput').textContent='已选择：'+traceCase.title+'。先预测第一步是谁执行，再点下一步。';document.getElementById('traceProgress').textContent='未开始';document.getElementById('traceNext').disabled=false;});document.getElementById('traceNext').onclick=traceStep;let used=0,pending=false;function redraw(){document.getElementById('used').textContent=used/1024+' GiB';document.getElementById('memorybar').value=used}document.querySelectorAll('[data-alloc]').forEach(b=>b.onclick=async()=>{if(pending)return;pending=true;try{const d=await api('memory',{used_mib:used,request_mib:Number(b.dataset.alloc)});used=d.after_mib;redraw();document.getElementById('memoryResult').textContent=(d.accepted?'允许：预算内，模型继续执行。':'拒绝：超过剩余预算，模型不转交 Driver。')+'\n已用预算 '+used/1024+' GiB。'+(d.accepted?'模拟假定底层申请成功。':'拒绝后占用不增加。')}catch(e){document.getElementById('memoryResult').textContent=e.message}finally{pending=false}});document.getElementById('reset').onclick=()=>{if(pending)return;used=0;redraw();document.getElementById('memoryResult').textContent='本页预算已重置。'};quiz('q3',1,'运行时要看实际调用和限制效果；注解或节点容量只说明配置与登记。');quiz("checkQuiz0",1,"逻辑额度只放行到真实 Driver；底层返回、成功记账和应用错误处理是后续不同步骤。");</script></html>
