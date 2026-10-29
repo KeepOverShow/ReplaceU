@@ -1,0 +1,28 @@
+{
+  "part": "kubernetes",
+  "number": "01",
+  "slug": "kubernetes-01",
+  "diagram": "k8s-schedule-overview",
+  "title": "Kubernetes 第一课：Pod 怎样选中节点",
+  "summary": "从一个 Pending Pod 出发，沿源码区分筛选、打分、缓存假定和绑定。",
+  "body": "<p class=\"hint\"><b>学完能回答：</b>Pod 为什么还在 Pending？调度器怎样从两个节点中选出一个？选中后是否已经完成绑定？</p>\n<h2>从一个例子出发</h2><p>假设 Pod <code>gpu-demo</code> 请求 1 核 CPU 和 2 GiB 内存。节点 <code>node-p4</code> 剩余可调度 CPU 为 2 核，<code>node-b</code> 为 0.5 核。这里是便于讲解的假设，不代表实际集群测量值。先忽略 GPU 与其他约束。</p>\n<h2>第一步：先拿到调度缓存的快照</h2><p><b>源码：</b>Kubernetes v1.28.11，<code>pkg/scheduler/schedule_one.go</code>，<code>schedulePod</code>。</p><pre><code>if err := sched.Cache.UpdateSnapshot(...); err != nil {\n    return result, err\n}\nfeasibleNodes, diagnosis, err :=\n    sched.findNodesThatFitPod(ctx, fwk, state, pod)</code></pre><p><b>解析：</b>先把调度器缓存更新为本轮使用的节点快照，再把 Pod 和快照交给筛选过程。快照不是实时读取每台机器；失败会直接结束这次调度。下一步需要判断快照中哪些节点满足要求。</p>\n<h2>第二步：PreFilter 准备，Filter 逐节点筛选</h2><p><b>源码：</b>同一文件，<code>findNodesThatFitPod</code> 与 <code>findNodesThatPassFilters</code>。</p><pre><code>preRes, s := fwk.RunPreFilterPlugins(ctx, state, pod)\n// ...\nnodeInfo := nodes[(sched.nextStartNodeIndex+i)%numAllNodes]\nstatus := fwk.RunFilterPluginsWithNominatedPods(\n    ctx, state, pod, nodeInfo)</code></pre><p><b>解析：</b>PreFilter 处理适用于整个 Pod 的准备工作，也可返回候选节点集合；Filter 在每个候选节点上运行。<code>nodeInfo</code> 是节点及已知 Pod 等信息的调度器视图，<code>status</code> 是本次筛选状态。并非每个插件都会启用，具体取决于调度配置。</p><p class=\"hint\"><b>代入断点：</b>当 <code>nodeInfo.Node().Name == \"node-p4\"</code>，假设所有已启用筛选插件都通过，则 <code>status.IsSuccess() == true</code>，该节点进入可行节点集合。对 <code>node-b</code>，如果 NodeResourcesFit 因 CPU 不足拒绝，则结果为不可调度；这里描述的是假设的插件结果，不是实测日志。</p><p><b>与下一步的关系：</b>只有通过 Filter 的节点参与后续决策；筛选后没有节点时，会返回 FitError，可能进入 PostFilter 尝试抢占。</p>\n<h2>第三步：候选不止一个才需要比较</h2><pre><code>if len(feasibleNodes) == 1 {\n    return ScheduleResult{SuggestedHost: feasibleNodes[0].Name, ...}, nil\n}\npriorityList, err := prioritizeNodes(..., feasibleNodes)</code></pre><p><b>解析：</b>上一步只剩 <code>node-p4</code>，所以直接返回该节点；不能说本例经过了 Score。若有多个可行节点，才调用打分流程；各插件得分结合配置权重，最高分节点被选出。若存在 extender，还可能加入其优先级结果。</p>\n<h2>第四步：选中、假定、绑定不是一回事</h2><p><b>源码：</b>同一文件，<code>schedulingCycle</code> 与 <code>ScheduleOne</code>。</p><pre><code>err = sched.assume(logger, assumedPod, scheduleResult.SuggestedHost)\nif sts := fwk.RunReservePluginsReserve(ctx, state, assumedPod,\n    scheduleResult.SuggestedHost); !sts.IsSuccess() {\n    fwk.RunReservePluginsUnreserve(ctx, state, assumedPod, ...)\n    sched.Cache.ForgetPod(logger, assumedPod)\n}</code></pre><p><b>解析：</b>选出节点后，Assume 在调度器缓存里先记下这个 Pod；Reserve 给已启用插件预留资源。Reserve 失败时执行 Unreserve 并撤销缓存假定。成功还要经过 Permit 等步骤，然后才进入异步绑定周期；假定成功不等于 API Server 已确认绑定。</p><p><b>关联 HAMi：</b>当调度器配置了 HAMi extender 且请求符合其参与条件，原生筛选、外部筛选与绑定按配置衔接。HAMi 的外部接口不等同于原生 framework 插件，详见 <a href=\"hami-02.html\">HAMi 第二课</a>。</p>\n<h2>如何验证</h2><pre><code>kubectl get pod gpu-demo -o wide\nkubectl describe pod gpu-demo\nkubectl get pod gpu-demo -o jsonpath='{.spec.schedulerName} {.spec.nodeName}'</code></pre><p>先看实际调度器名称、nodeName 和事件，再根据失败插件与原因查对应日志；空 nodeName 不能单独证明是哪一环失败。调度完成也不代表容器已经启动成功。</p><h2>下一步学什么</h2><p>后续将沿控制器与声明式状态、调度插件、缓存与队列、Node 资源、kubelet 与容器运行时、网络和存储逐步展开。对任何一步有疑问，都可以直接问我。</p>",
+  "choices": [
+    "直接选中 node-p4，跳过 Score",
+    "必须先对 node-p4 执行 Score"
+  ],
+  "question": "本课示例中，node-p4 是 Filter 后唯一的可行节点。按照 Kubernetes v1.28.11 的 schedulePod，下一步如何选节点？",
+  "correct": 0,
+  "feedback": "源码对唯一可行节点直接返回；只有多个可行节点时才调用 prioritizeNodes。",
+  "extra_quizzes": [
+    {
+      "question": "调度器已将 gpu-demo 假定在 node-p4，是否代表 API Server 已完成绑定？",
+      "choices": [
+        "不一定，仍需完成后续绑定",
+        "是，假定同时完成 API 绑定"
+      ],
+      "correct": 0,
+      "feedback": "Assume 更新调度器缓存；绑定是后续步骤，失败时还需要清理假定状态。"
+    }
+  ],
+  "lead": "<p class=\"boundary\">主图是学习用简化路径；Permit、PreBind 等步骤在正文说明，并非表示可省略。代码中的省略号表示摘录而非可直接编译的源码。</p><style>pre{white-space:pre;overflow-x:auto;overflow-wrap:normal;-webkit-text-size-adjust:100%}pre code{overflow-wrap:normal}</style>"
+}

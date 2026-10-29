@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {"title": "一个 Pod 如何选中节点", "locale": "zh-CN", "quality_profile": "showcase", "output": "diagrams/k8s-schedule-overview/diagram.html"},
+  "lanes": [{"id": "scheduler", "label": "kube-scheduler"}, {"id": "binding", "label": "绑定与回滚"}],
+  "mainPath": ["snapshot", "prefilter", "filter", "score", "assume", "bind"],
+  "nodes": [
+    {"id":"snapshot","lane":"scheduler","col":0,"type":"backend","label":"缓存快照","sublabel":"获取节点视图"},
+    {"id":"prefilter","lane":"scheduler","col":1,"type":"backend","label":"PreFilter","sublabel":"准备与缩小候选"},
+    {"id":"filter","lane":"scheduler","col":2,"type":"backend","label":"Filter","sublabel":"逐节点筛选"},
+    {"id":"score","lane":"scheduler","col":3,"type":"backend","label":"Score","sublabel":"多候选时打分"},
+    {"id":"assume","lane":"scheduler","col":4,"type":"backend","label":"Assume / Reserve","sublabel":"先在缓存中占位"},
+    {"id":"bind","lane":"binding","col":5,"type":"cloud","label":"异步绑定","sublabel":"写入节点关系"}
+  ],
+  "edges": [{"from":"snapshot","to":"prefilter"},{"from":"prefilter","to":"filter"},{"from":"filter","to":"score"},{"from":"score","to":"assume"},{"from":"assume","to":"bind"}],
+  "cards": [{"dot":"amber","title":"有条件的步骤","items":["只有一个可行节点时跳过打分","Reserve 失败执行 Unreserve 并忘记假定"]}]
+}

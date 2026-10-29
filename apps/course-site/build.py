@@ -4,9 +4,9 @@ import json,shutil
 from html import escape
 from shared import CSS,COMMON,js2,js3
 ROOT=Path(__file__).resolve().parents[2]; SITE=Path(__file__).parent/'site'
-PARTS={'hami':'第一部分 · HAMi 专题','koordinator':'第二部分 · Koordinator 专题','practice':'第三部分 · 联合实践'}
+PARTS={'hami':'第一部分 · HAMi 专题','koordinator':'第二部分 · Koordinator 专题','practice':'第三部分 · 联合实践','kubernetes':'第四部分 · Kubernetes 专题'}
 def page(title,body,script=''):
- return '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+' · ReplaceU</title><style>'+CSS+'h3[id]{scroll-margin-top:88px}</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">三部分课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main>'+body+'</main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>'+COMMON+'\n'+script+'</script></html>'
+ return '<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+' · ReplaceU</title><style>'+CSS+'h3[id]{scroll-margin-top:88px}</style><header><nav><a href="/course/">ReplaceU · 系统学习云计算</a><a href="/course/catalog.html">课程目录</a><a href="https://github.com/KeepOverShow/ReplaceU">项目源码</a></nav></header><main>'+body+'</main><footer>阅读不等于掌握 · 每课完成预测、实验与复述</footer><script>'+COMMON+'\n'+script+'</script></html>'
 def build():
  SITE.mkdir(exist_ok=True);(SITE/'lessons').mkdir(exist_ok=True);(SITE/'reference').mkdir(exist_ok=True)
  manifest=json.loads((ROOT/'courses/catalog.json').read_text());cards=''
@@ -15,7 +15,7 @@ def build():
   cards+='<section id="'+part+'"><h2>'+label+'</h2>'
   for d in entries:cards+='<h3><a href="lessons/'+d['slug']+'.html">'+d['number']+' · '+d['title']+'</a></h3><p>'+d['summary']+'</p>'
   cards+='</section>'
- index='<p class="kicker">三条清晰主线</p><h1>先 HAMi，再 Koordinator，<br>最后把知识用于实践。</h1><p>第一部分只讲 HAMi；第二部分只讲 Koordinator；第三部分把前两部分连到实际服务与源码。每课先读 Archify 主图，再判断、操作和复述。</p><nav><a href="#hami">HAMi</a><a href="#koordinator">Koordinator</a><a href="#practice">联合实践</a></nav>'+cards+'<section><h2>服务状态与学习边界</h2><p id="live">读取中…</p><button onclick="live()">刷新</button><p>课程运行在服务器。GPU 实验是明确标记的模拟；实践项目使用真实 Kubernetes/Koordinator 与 CPU 工作负载，不声称完成真实 NVIDIA 隔离验证。</p><a href="/">打开实践工作台</a></section>'
+ index='<p class="kicker">四条学习主线</p><h1>从 Kubernetes 基础，<br>到 GPU 调度与联合实践。</h1><p>HAMi、Koordinator、联合实践与 Kubernetes 分专题学习；从问题和源码出发，结合图解理解全过程。</p><nav><a href="#hami">HAMi</a><a href="#koordinator">Koordinator</a><a href="#practice">联合实践</a><a href="#kubernetes">Kubernetes</a></nav>'+cards+'<section><h2>服务状态与学习边界</h2><p id="live">读取中…</p><button onclick="live()">刷新</button><p>课程运行在服务器。GPU 实验是明确标记的模拟；实践项目使用真实 Kubernetes/Koordinator 与 CPU 工作负载，不声称完成真实 NVIDIA 隔离验证。</p><a href="/">打开实践工作台</a></section>'
  for name in ['index.html','catalog.html']:(SITE/name).write_text(page('课程目录',index))
  for entry in manifest:
   d=json.loads((ROOT/'courses'/entry['part']/(entry['number']+'.json')).read_text());slug=d['slug'];diagram=d['diagram']
@@ -45,7 +45,7 @@ def build():
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle','hami-scoring','kube-filter-values','hami-score-values']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle','hami-scoring','kube-filter-values','hami-score-values','k8s-schedule-overview']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
   svg=ROOT/'diagrams'/name/'diagram.svg'
