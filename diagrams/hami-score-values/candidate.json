@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "模拟断点：P4 试放与两层评分",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      690
+    ],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "output": "diagrams/hami-score-values/diagram.html",
+    "repository": {
+      "url": "https://github.com/Project-HAMi/HAMi.git",
+      "revision": "f754a8c4621d969aba4c7c10b1d1d6d41fe6b530",
+      "link_mode": "local-only"
+    }
+  },
+  "participants": [
+    {
+      "id": "filter",
+      "type": "backend",
+      "label": "Filter",
+      "sublabel": "调度入口",
+      "sources": [
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 500,
+          "end_line": 510
+        },
+        {
+          "path": "pkg/scheduler/scheduler.go",
+          "line": 524,
+          "end_line": 526
+        }
+      ]
+    },
+    {
+      "id": "node",
+      "type": "backend",
+      "label": "节点评分",
+      "sublabel": "已有分配",
+      "sources": [
+        {
+          "path": "pkg/scheduler/score.go",
+          "line": 151,
+          "end_line": 159
+        },
+        {
+          "path": "pkg/scheduler/policy/node_policy.go",
+          "line": 48,
+          "end_line": 53
+        },
+        {
+          "path": "pkg/scheduler/policy/node_policy.go",
+          "line": 75,
+          "end_line": 95
+        }
+      ]
+    },
+    {
+      "id": "gpu",
+      "type": "backend",
+      "label": "设备评分",
+      "sublabel": "已有分配 + 本次请求",
+      "sources": [
+        {
+          "path": "pkg/scheduler/policy/gpu_policy.go",
+          "line": 45,
+          "end_line": 78
+        },
+        {
+          "path": "pkg/scheduler/score.go",
+          "line": 86,
+          "end_line": 102
+        }
+      ]
+    },
+    {
+      "id": "fit",
+      "type": "backend",
+      "label": "GPU Fit",
+      "sublabel": "逐卡检查",
+      "sources": [
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 684,
+          "end_line": 699
+        },
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 722,
+          "end_line": 752
+        },
+        {
+          "path": "pkg/device/nvidia/device.go",
+          "line": 773,
+          "end_line": 788
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "m0",
+      "from": "filter",
+      "to": "node",
+      "y": 160,
+      "label": "A 节点已有使用量",
+      "variant": "default"
+    },
+    {
+      "id": "m1",
+      "from": "node",
+      "to": "filter",
+      "y": 215,
+      "label": "节点默认分约 3.08",
+      "variant": "default"
+    },
+    {
+      "id": "m2",
+      "from": "filter",
+      "to": "gpu",
+      "y": 270,
+      "label": "A0 已用 1 / 2048 / 25",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "filter",
+      "to": "gpu",
+      "y": 325,
+      "label": "新申请 1 / 2048 / 25",
+      "variant": "default"
+    },
+    {
+      "id": "m4",
+      "from": "gpu",
+      "to": "filter",
+      "y": 380,
+      "label": "A0 设备分约 12.33",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "gpu",
+      "to": "fit",
+      "y": 435,
+      "label": "假设试算 A0：余额 5632",
+      "variant": "default"
+    },
+    {
+      "id": "m6",
+      "from": "fit",
+      "to": "filter",
+      "y": 490,
+      "label": "试算 A0：2 / 4096 / 50",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "节点分",
+      "items": [
+        "节点默认分读取试放前的已有分配。",
+        "两卡合计槽位 20，显存 15360 MiB。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "设备分",
+      "items": [
+        "设备评分把新请求加入已有值。",
+        "排序后 Fit 还需检查容量及其他条件。"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "模拟范围",
+      "items": [
+        "数值是调度账本，不是实时 GPU 数据。",
+        "假设试算 A0；实际优先设备由策略决定。"
+      ]
+    }
+  ]
+}

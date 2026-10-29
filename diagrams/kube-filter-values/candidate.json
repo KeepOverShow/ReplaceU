@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "模拟断点：Kubernetes 初筛赋值",
+    "locale": "zh-CN",
+    "viewBox": [
+      1080,
+      690
+    ],
+    "column_fit": "spread",
+    "quality_profile": "showcase",
+    "output": "diagrams/kube-filter-values/diagram.html"
+  },
+  "participants": [
+    {
+      "id": "input",
+      "type": "external",
+      "label": "输入",
+      "sublabel": "初始状态"
+    },
+    {
+      "id": "select",
+      "type": "backend",
+      "label": "选择节点",
+      "sublabel": "nodeInfo"
+    },
+    {
+      "id": "filter",
+      "type": "backend",
+      "label": "Filter 插件",
+      "sublabel": "节点检查"
+    },
+    {
+      "id": "result",
+      "type": "backend",
+      "label": "结果",
+      "sublabel": "成功或失败"
+    }
+  ],
+  "messages": [
+    {
+      "id": "m0",
+      "from": "input",
+      "to": "select",
+      "y": 160,
+      "label": "nodes[0]=节点 A",
+      "variant": "default"
+    },
+    {
+      "id": "m1",
+      "from": "input",
+      "to": "select",
+      "y": 215,
+      "label": "起点 0，i=0",
+      "variant": "default"
+    },
+    {
+      "id": "m2",
+      "from": "select",
+      "to": "filter",
+      "y": 270,
+      "label": "nodeInfo=nodes[0]",
+      "variant": "default"
+    },
+    {
+      "id": "m3",
+      "from": "filter",
+      "to": "result",
+      "y": 325,
+      "label": "假设 status=nil",
+      "variant": "default"
+    },
+    {
+      "id": "m4",
+      "from": "result",
+      "to": "select",
+      "y": 380,
+      "label": "Code()=Success",
+      "variant": "default"
+    },
+    {
+      "id": "m5",
+      "from": "select",
+      "to": "result",
+      "y": 435,
+      "label": "A 进入可行集合",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "输入与赋值",
+      "items": [
+        "这里只演示 A 节点的一次模拟检查。",
+        "nodeInfo 是节点视图，不是一张 GPU。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "成功状态",
+      "items": [
+        "nil 状态的 Code() 返回 Success。",
+        "实际插件可能返回失败状态。"
+      ]
+    }
+  ]
+}

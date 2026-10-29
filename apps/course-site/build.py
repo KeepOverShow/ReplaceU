@@ -45,9 +45,11 @@ def build():
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
- for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle','hami-scoring']:
+ for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle','hami-scoring','kube-filter-values','hami-score-values']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
+  svg=ROOT/'diagrams'/name/'diagram.svg'
+  if svg.exists():shutil.copy2(svg,SITE/'reference'/(name+'.svg'))
  for reference in (ROOT/'courses/reference').glob('*.html'):
   shutil.copy2(reference,SITE/'reference'/reference.name)
  for old,new in {'0003-hami-roles':'practice-01','0004-gpu-fragmentation':'practice-02','0005-hami-runtime':'hami-04'}.items():
