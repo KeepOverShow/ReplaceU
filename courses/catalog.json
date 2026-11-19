@@ -59,8 +59,8 @@
     "part": "kubernetes",
     "number": "01",
     "slug": "kubernetes-01",
-    "title": "Kubernetes 第一课：Pod 怎样选中节点",
-    "summary": "从一个 Pending Pod 出发，沿源码区分筛选、打分、缓存假定和绑定。",
+    "title": "Kubernetes 第一课：Pod 创建请求怎样找到处理入口",
+    "summary": "从路由注册到请求进入创建处理器，区分启动时和请求时。",
     "diagram": "k8s-schedule-overview"
   }
 ]

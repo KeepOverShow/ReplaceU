@@ -14,6 +14,7 @@ def build():
   entries=[d for d in manifest if d['part']==part]
   cards+='<section id="'+part+'"><h2>'+label+'</h2>'
   for d in entries:cards+='<h3><a href="lessons/'+d['slug']+'.html">'+d['number']+' · '+d['title']+'</a></h3><p>'+d['summary']+'</p>'
+  if part=='kubernetes':cards+='<p><a href="lessons/P1-课程目录.html">查看 Kubernetes 完整课程目录</a></p>'
   cards+='</section>'
  index='<p class="kicker">四条学习主线</p><h1>从 Kubernetes 基础，<br>到 GPU 调度与联合实践。</h1><p>HAMi、Koordinator、联合实践与 Kubernetes 分专题学习；从问题和源码出发，结合图解理解全过程。</p><nav><a href="#hami">HAMi</a><a href="#koordinator">Koordinator</a><a href="#practice">联合实践</a><a href="#kubernetes">Kubernetes</a></nav>'+cards+'<section><h2>服务状态与学习边界</h2><p id="live">读取中…</p><button onclick="live()">刷新</button><p>课程运行在服务器。GPU 实验是明确标记的模拟；实践项目使用真实 Kubernetes/Koordinator 与 CPU 工作负载，不声称完成真实 NVIDIA 隔离验证。</p><a href="/">打开实践工作台</a></section>'
  for name in ['index.html','catalog.html']:(SITE/name).write_text(page('课程目录',index))
@@ -44,7 +45,13 @@ def build():
   pos=next(i for i,x in enumerate(siblings) if x['slug']==slug)
   body+='<nav aria-label="课间导航">'+''.join('<a href="'+siblings[i]['slug']+'.html">'+label+'：'+escape(siblings[i]['title'])+'</a>' for i,label in [(pos-1,'上一课'),(pos+1,'下一课')] if 0<=i<len(siblings))+'</nav>'
   body+='<p><a href="/course/catalog.html#'+d['part']+'">返回本部分目录</a></p>'
-  (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
+  if slug=='kubernetes-01':
+   standalone=(ROOT/'courses/kubernetes/lessons/P1-1-Pod创建请求入口.html').read_text()
+   (SITE/'lessons'/'P1-1-Pod创建请求入口.html').write_text(standalone)
+   shutil.copy2(ROOT/'courses/kubernetes/lessons/P1-课程目录.html', SITE/'lessons'/'P1-课程目录.html')
+   (SITE/'lessons'/(slug+'.html')).write_text(standalone)
+  else:
+   (SITE/'lessons'/(slug+'.html')).write_text(page(d['title'],body,script))
  for name in ['practice-flow','hami-runtime','hami-overview','koord-overview','hami-handoff','hami-pod-card','hami-device-protocol','hami-capacity-source','api-list-watch','device-list-and-watch','hami-scheduler-cycle','hami-scoring','kube-filter-values','hami-score-values','k8s-schedule-overview']:
   source=ROOT/'diagrams'/name/'diagram.html'
   if source.exists():shutil.copy2(source,SITE/'reference'/(name+'.html'))
