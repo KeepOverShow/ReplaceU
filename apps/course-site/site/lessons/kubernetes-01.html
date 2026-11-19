@@ -19,6 +19,37 @@
     G --> H[createHandler 返回的处理函数]
   end
   C -.注册供请求使用.-> F</pre></details></div>
+<section id="graphify-call-chain" class="box"><h2>把图展开：一条请求对应两段调用链</h2>
+<p>沿用本课场景：客户端准备创建 <code>default</code> 命名空间中的 Pod。以下只展示与本课有关的调用；图谱关系经过 Kubernetes v1.28.0 源码复核，分支假设均为示例。</p>
+<h3>第一段：启动时建立路由</h3><pre>Instance.InstallAPIs                         instance.go:700–702
+  ├─ NewRESTStorage（接口调用）
+  │   └─ legacyProvider.NewRESTStorage       storage_core.go:150
+  │       ├─ podstore.NewStorage             storage_core.go:190
+  │       └─ storage["pods"] = podStorage.Pod  :226–227
+  └─ InstallLegacyAPIGroup                   instance.go:732–734
+      └─ installAPIResources                 genericapiserver.go:817
+          └─ APIGroupVersion.InstallREST     genericapiserver.go:758
+              ├─ APIInstaller.Install        groupversion.go:118
+              │   └─ registerResourceHandlers  installer.go:205
+              │       └─ restfulCreateResource installer.go:901
+              │           → 返回创建处理闭包
+              │       → ws.POST(...).To(handler)  installer.go:910
+              └─ container.Add(ws)           groupversion.go:121</pre>
+<p><b>每一步把什么交给下一步？</b>启用 Pod 资源时，<code>NewRESTStorage</code> 把 Pod 的存储实现放入资源映射；随后安装逻辑读取该映射，为资源注册 POST 处理函数。<code>restfulCreateResource</code> 在启动时返回一个闭包，路由持有它；此时尚未处理任何 Pod 请求。</p>
+<p class="muted">路径对应：<code>pkg/controlplane/instance.go</code>；<code>pkg/registry/core/rest/storage_core.go</code>；其余文件分别位于 <code>staging/src/k8s.io/apiserver/pkg/server/genericapiserver.go</code>、<code>.../endpoints/groupversion.go</code>、<code>.../endpoints/installer.go</code>。</p>
+<h3>第二段：请求到达后执行闭包</h3><pre>POST /api/v1/namespaces/default/pods
+  → API Server 的过滤器链与路由匹配
+  → restfulCreateResource 返回的闭包        installer.go:1278–1280
+  → handlers.CreateResource(...)             installer.go:1280
+  → createHandler(..., false)               create.go:244–245
+  → 执行返回的 HTTP 处理函数               create.go:53–54
+  → 读取请求体                              create.go:93
+  → decoder.Decode(...)                     create.go:124–126
+  → 条件成立时执行变更准入 Admit             create.go:201–204
+  → requestFunc() → r.Create(...)           create.go:182–189, 208</pre>
+<p><b>衔接关键：</b>路由匹配成功后，才执行启动阶段保存的闭包；闭包调用 <code>CreateResource</code> 并立即执行它返回的处理函数。解码得到的对象随后被传入准入和存储创建流程。准入是否执行取决于配置及接口判断；读取、解码或准入报错会提前返回，不能把调用 <code>r.Create</code> 当作已经成功写入。</p>
+<p class="muted"><code>installer.go</code> 的完整路径见上；<code>create.go</code> 位于 <code>staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go</code>。上图及链条省略了部分包装器、错误处理和其他资源分支。</p>
+<details><summary>Graphify 关系从哪里来？</summary><p>对第一课涉及的 7 个 Kubernetes v1.28.0 Go 源文件建立 Graphify 图谱。图谱直接提取出 <code>registerResourceHandlers → restfulCreateResource</code> 和 <code>CreateResource → createHandler</code>；<code>Install → registerResourceHandlers</code> 被标为推断，已用 <code>installer.go:205</code> 核实。跨包的闭包连接由 <code>installer.go:1278–1280</code> 人工核实补齐，不把它冒充为图谱自动找到的完整路径。</p></details></section>
 <h2>二、启动时：Pod 存储如何变成 POST 路由？</h2><p><b>源码</b> <code>pkg/registry/core/rest/storage_core.go:190</code>、<code>:226</code></p><pre>podStorage, err := podstore.NewStorage(...)
 // 省略错误处理和其他资源
 if resource := "pods"; apiResourceConfigSource.ResourceEnabled(...) {
