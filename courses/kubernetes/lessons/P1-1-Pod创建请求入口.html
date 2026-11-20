@@ -35,13 +35,10 @@
               │           → 返回创建处理闭包
               │       → ws.POST(...).To(handler)  installer.go:910
               └─ container.Add(ws)           groupversion.go:121</pre>
-<div class="startup-detail" style="border-left:3px solid #94c9bd;padding-left:14px;margin:16px 0"><h4 style="font-size:16px;color:#075e51;margin:16px 0 6px">第一段的衔接：每一步交出什么？</h4><p>启用 Pod 资源时，<code>NewRESTStorage</code> 把 Pod 的存储实现放入资源映射；随后安装逻辑读取该映射，为资源注册 POST 处理函数。<code>restfulCreateResource</code> 在启动时返回一个闭包，路由持有它；此时尚未处理任何 Pod 请求。</p>
+<div class="startup-detail" style="border-left:3px solid #94c9bd;padding-left:14px;margin:16px 0"><h4 style="font-size:16px;color:#075e51;margin:16px 0 6px">第一段的衔接：每一步交出什么？</h4><p>启用 Pod 资源时，<code>NewRESTStorage</code> 把 Pod API 对象的管理实现放入资源映射；随后安装逻辑读取该映射，为资源注册 POST 处理函数。<code>restfulCreateResource</code> 在启动时返回一个闭包，路由持有它；此时尚未处理任何 Pod 请求。</p>
 <h4 style="font-size:16px;color:#075e51;margin:20px 0 6px">第一段详解：从存储实现到路由</h4><p>假设 Pod 资源已启用，稍后客户端会向 <code>default</code> 命名空间创建 Pod。先看启动阶段准备了什么。</p>
-<div class="tip"><b>先分清：这里存储的是什么？</b><p>“Pod 的存储实现”是 API Server 用来创建、查询和更新 <strong>Pod API 对象</strong>的服务端实现，不是 Pod 使用的 PVC。Pod 对象保存容器配置、调度信息，以及引用的 PVC 名称等；它不保存容器写入卷的文件内容。</p><p><strong>PVC 对象</strong>描述用户对持久化存储的申请，是另一种 API 对象；PVC 可以绑定到 PV，再由底层存储提供卷。容器写入卷的文件保存在底层存储中。</p><pre>Pod 存储实现 → 管理 Pod API 对象 → 引用 PVC
-PVC 存储实现 → 管理 PVC API 对象 → 绑定 PV
-                                      ↓
-                              底层存储中的文件</pre><p>常见集群中，Pod、PVC 等 API 对象由 API Server 经存储层保存到 etcd；卷内实际文件由对应的底层存储系统保存。这里初始化 Pod 存储实现，并不意味着创建了 Pod 或分配了 PVC。</p></div>
-<h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">① 准备 Pod 的存储实现。</h5><p> <code>legacyProvider.NewRESTStorage</code> 创建 Pod 存储对象，并在资源启用时放入映射：</p><pre>podStorage, err := podstore.NewStorage(...)
+
+<h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">① 准备 Pod API 对象的管理实现。</h5><p> <code>legacyProvider.NewRESTStorage</code> 创建 Pod API 对象管理组件，并在资源启用时放入映射：</p><pre>podStorage, err := podstore.NewStorage(...)
 // 检查 err；确认 pods 资源已启用后：
 storage["pods"] = podStorage.Pod</pre><p>映射把资源名 <code>"pods"</code> 和对应存储实现关联起来。它交给后续安装流程的是<strong>资源名到存储实现的对应关系</strong>；此时没有创建 Pod。源码：<code>pkg/registry/core/rest/storage_core.go:190, 212, 226–227</code>。</p>
 <h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">② 根据存储实现安装路由。</h5><p>安装逻辑遍历资源映射，把资源名和相应存储实现传给 <code>registerResourceHandlers</code>。当该实现支持创建操作时，安装逻辑准备 POST 路由。对于命名空间中的 Pod，请求路径形如 <code>/api/v1/namespaces/{namespace}/pods</code>。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:199–205, 896–910</code>。</p>
@@ -55,7 +52,7 @@ route := ws.POST(action.Path).To(handler)</pre><p>上面是按源码顺序展示
     }
 }</pre><p><code>return func(...)</code> 返回的是一个函数；它记住了 <code>r</code>、<code>scope</code> 和 <code>admit</code>，因此叫闭包。启动时先构造闭包、经过包装后绑定到路由；函数体里的创建处理此时尚未执行。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:901–910, 1278–1281</code>。</p>
 <h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">④ 请求到达后再执行。</h5><p>例如 <code>POST /api/v1/namespaces/default/pods</code> 通过前置处理并匹配路由后，路由调用已保存的处理函数。闭包才调用 <code>handlers.CreateResource</code> 并立即执行返回的处理函数，随后读取、解码请求体，进入后续准入与创建流程；这些步骤中的错误可能使请求提前结束。</p>
-<div class="tip"><b>串起来：</b>Pod 存储实现 → 资源映射 → 路由安装逻辑 → 绑定处理函数 → 等待请求 → 匹配后执行。前三步发生在启动时，最后一步发生在请求到达时。</div>
+<div class="tip"><b>串起来：</b>Pod API 对象管理实现 → 资源映射 → 路由安装逻辑 → 绑定处理函数 → 等待请求 → 匹配后执行。前三步发生在启动时，最后一步发生在请求到达时。</div>
 <p class="muted">路径对应：<code>pkg/controlplane/instance.go</code>；<code>pkg/registry/core/rest/storage_core.go</code>；其余文件分别位于 <code>staging/src/k8s.io/apiserver/pkg/server/genericapiserver.go</code>、<code>.../endpoints/groupversion.go</code>、<code>.../endpoints/installer.go</code>。</p>
 </div>
 <h3>第二段：请求到达后执行闭包</h3><pre>POST /api/v1/namespaces/default/pods
@@ -71,11 +68,11 @@ route := ws.POST(action.Path).To(handler)</pre><p>上面是按源码顺序展示
 <p><b>衔接关键：</b>路由匹配成功后，才执行启动阶段保存的闭包；闭包调用 <code>CreateResource</code> 并立即执行它返回的处理函数。解码得到的对象随后被传入准入和存储创建流程。准入是否执行取决于配置及接口判断；读取、解码或准入报错会提前返回，不能把调用 <code>r.Create</code> 当作已经成功写入。</p>
 <p class="muted"><code>installer.go</code> 的完整路径见上；<code>create.go</code> 位于 <code>staging/src/k8s.io/apiserver/pkg/endpoints/handlers/create.go</code>。上图及链条省略了部分包装器、错误处理和其他资源分支。</p>
 <details><summary>Graphify 关系从哪里来？</summary><p>对第一课涉及的 7 个 Kubernetes v1.28.0 Go 源文件建立 Graphify 图谱。图谱直接提取出 <code>registerResourceHandlers → restfulCreateResource</code> 和 <code>CreateResource → createHandler</code>；<code>Install → registerResourceHandlers</code> 被标为推断，已用 <code>installer.go:205</code> 核实。跨包的闭包连接由 <code>installer.go:1278–1280</code> 人工核实补齐，不把它冒充为图谱自动找到的完整路径。</p></details></section>
-<h2>二、启动时：Pod 存储如何变成 POST 路由？</h2><p><b>源码</b> <code>pkg/registry/core/rest/storage_core.go:190</code>、<code>:226</code></p><pre>podStorage, err := podstore.NewStorage(...)
+<h2>二、启动时：Pod 对象管理实现如何变成 POST 路由？</h2><p><b>源码</b> <code>pkg/registry/core/rest/storage_core.go:190</code>、<code>:226</code></p><pre>podStorage, err := podstore.NewStorage(...)
 // 省略错误处理和其他资源
 if resource := "pods"; apiResourceConfigSource.ResourceEnabled(...) {
     storage[resource] = podStorage.Pod
-}</pre><p>这里先构造 Pod 存储；当 Pod 资源启用时，把它放到资源存储表的 <code>pods</code> 项。<b>这发生在服务初始化过程</b>，不是收到每个 Pod 请求时重新创建。</p>
+}</pre><p>这里先构造 Pod API 对象管理实现；当 Pod 资源启用时，把它放到资源存储表的 <code>pods</code> 项。<b>这发生在服务初始化过程</b>，不是收到每个 Pod 请求时重新创建。</p>
 <p><b>源码</b> <code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:190</code>、<code>:205</code>、<code>:543</code>、<code>:567</code>、<code>:896</code></p><pre>for _, path := range paths {
     apiResource, resourceInfo, err :=
         a.registerResourceHandlers(path, a.group.Storage[path], ws)
