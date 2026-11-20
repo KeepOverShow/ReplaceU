@@ -37,6 +37,10 @@
               └─ container.Add(ws)           groupversion.go:121</pre>
 <div class="startup-detail" style="border-left:3px solid #94c9bd;padding-left:14px;margin:16px 0"><h4 style="font-size:16px;color:#075e51;margin:16px 0 6px">第一段的衔接：每一步交出什么？</h4><p>启用 Pod 资源时，<code>NewRESTStorage</code> 把 Pod 的存储实现放入资源映射；随后安装逻辑读取该映射，为资源注册 POST 处理函数。<code>restfulCreateResource</code> 在启动时返回一个闭包，路由持有它；此时尚未处理任何 Pod 请求。</p>
 <h4 style="font-size:16px;color:#075e51;margin:20px 0 6px">第一段详解：从存储实现到路由</h4><p>假设 Pod 资源已启用，稍后客户端会向 <code>default</code> 命名空间创建 Pod。先看启动阶段准备了什么。</p>
+<div class="tip"><b>先分清：这里存储的是什么？</b><p>“Pod 的存储实现”是 API Server 用来创建、查询和更新 <strong>Pod API 对象</strong>的服务端实现，不是 Pod 使用的 PVC。Pod 对象保存容器配置、调度信息，以及引用的 PVC 名称等；它不保存容器写入卷的文件内容。</p><p><strong>PVC 对象</strong>描述用户对持久化存储的申请，是另一种 API 对象；PVC 可以绑定到 PV，再由底层存储提供卷。容器写入卷的文件保存在底层存储中。</p><pre>Pod 存储实现 → 管理 Pod API 对象 → 引用 PVC
+PVC 存储实现 → 管理 PVC API 对象 → 绑定 PV
+                                      ↓
+                              底层存储中的文件</pre><p>常见集群中，Pod、PVC 等 API 对象由 API Server 经存储层保存到 etcd；卷内实际文件由对应的底层存储系统保存。这里初始化 Pod 存储实现，并不意味着创建了 Pod 或分配了 PVC。</p></div>
 <h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">① 准备 Pod 的存储实现。</h5><p> <code>legacyProvider.NewRESTStorage</code> 创建 Pod 存储对象，并在资源启用时放入映射：</p><pre>podStorage, err := podstore.NewStorage(...)
 // 检查 err；确认 pods 资源已启用后：
 storage["pods"] = podStorage.Pod</pre><p>映射把资源名 <code>"pods"</code> 和对应存储实现关联起来。它交给后续安装流程的是<strong>资源名到存储实现的对应关系</strong>；此时没有创建 Pod。源码：<code>pkg/registry/core/rest/storage_core.go:190, 212, 226–227</code>。</p>
