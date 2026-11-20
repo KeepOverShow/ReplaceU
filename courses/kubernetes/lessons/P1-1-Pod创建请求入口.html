@@ -37,11 +37,11 @@
               └─ container.Add(ws)           groupversion.go:121</pre>
 <p><b>每一步把什么交给下一步？</b>启用 Pod 资源时，<code>NewRESTStorage</code> 把 Pod 的存储实现放入资源映射；随后安装逻辑读取该映射，为资源注册 POST 处理函数。<code>restfulCreateResource</code> 在启动时返回一个闭包，路由持有它；此时尚未处理任何 Pod 请求。</p>
 <h3>把“交给下一步”拆开看</h3><p>假设 Pod 资源已启用，稍后客户端会向 <code>default</code> 命名空间创建 Pod。先看启动阶段准备了什么。</p>
-<p><b>① 准备 Pod 的存储实现。</b> <code>legacyProvider.NewRESTStorage</code> 创建 Pod 存储对象，并在资源启用时放入映射：</p><pre>podStorage, err := podstore.NewStorage(...)
+<p><strong style="display:block;font-size:16px;line-height:1.5;color:#075e51;margin:18px 0 6px">① 准备 Pod 的存储实现。</strong> <code>legacyProvider.NewRESTStorage</code> 创建 Pod 存储对象，并在资源启用时放入映射：</p><pre>podStorage, err := podstore.NewStorage(...)
 // 检查 err；确认 pods 资源已启用后：
 storage["pods"] = podStorage.Pod</pre><p>映射把资源名 <code>"pods"</code> 和对应存储实现关联起来。它交给后续安装流程的是<strong>资源名到存储实现的对应关系</strong>；此时没有创建 Pod。源码：<code>pkg/registry/core/rest/storage_core.go:190, 212, 226–227</code>。</p>
-<p><b>② 根据存储实现安装路由。</b>安装逻辑遍历资源映射，把资源名和相应存储实现传给 <code>registerResourceHandlers</code>。当该实现支持创建操作时，安装逻辑准备 POST 路由。对于命名空间中的 Pod，请求路径形如 <code>/api/v1/namespaces/{namespace}/pods</code>。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:199–205, 896–910</code>。</p>
-<p><b>③ 构造处理函数并保存。</b>普通创建分支调用：</p><pre>handler = restfulCreateResource(creater, reqScope, admit)
+<p><strong style="display:block;font-size:16px;line-height:1.5;color:#075e51;margin:18px 0 6px">② 根据存储实现安装路由。</strong>安装逻辑遍历资源映射，把资源名和相应存储实现传给 <code>registerResourceHandlers</code>。当该实现支持创建操作时，安装逻辑准备 POST 路由。对于命名空间中的 Pod，请求路径形如 <code>/api/v1/namespaces/{namespace}/pods</code>。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:199–205, 896–910</code>。</p>
+<p><strong style="display:block;font-size:16px;line-height:1.5;color:#075e51;margin:18px 0 6px">③ 构造处理函数并保存。</strong>普通创建分支调用：</p><pre>handler = restfulCreateResource(creater, reqScope, admit)
 handler = metrics.InstrumentRouteFunc(...) // 指标包装，节选
 handler = utilwarning.AddWarningsHandler(handler, warnings)
 route := ws.POST(action.Path).To(handler)</pre><p>上面是按源码顺序展示的节选，省略了包装器的参数。<code>creater</code> 提供创建资源的能力；<code>reqScope</code> 保存请求处理所需的信息；<code>admit</code> 提供准入处理能力。它们被传给 <code>restfulCreateResource</code>：</p><pre>func restfulCreateResource(r rest.Creater, scope handlers.RequestScope,
@@ -50,7 +50,7 @@ route := ws.POST(action.Path).To(handler)</pre><p>上面是按源码顺序展示
         handlers.CreateResource(r, &amp;scope, admit)(res.ResponseWriter, req.Request)
     }
 }</pre><p><code>return func(...)</code> 返回的是一个函数；它记住了 <code>r</code>、<code>scope</code> 和 <code>admit</code>，因此叫闭包。启动时先构造闭包、经过包装后绑定到路由；函数体里的创建处理此时尚未执行。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:901–910, 1278–1281</code>。</p>
-<p><b>④ 请求到达后再执行。</b>例如 <code>POST /api/v1/namespaces/default/pods</code> 通过前置处理并匹配路由后，路由调用已保存的处理函数。闭包才调用 <code>handlers.CreateResource</code> 并立即执行返回的处理函数，随后读取、解码请求体，进入后续准入与创建流程；这些步骤中的错误可能使请求提前结束。</p>
+<p><strong style="display:block;font-size:16px;line-height:1.5;color:#075e51;margin:18px 0 6px">④ 请求到达后再执行。</strong>例如 <code>POST /api/v1/namespaces/default/pods</code> 通过前置处理并匹配路由后，路由调用已保存的处理函数。闭包才调用 <code>handlers.CreateResource</code> 并立即执行返回的处理函数，随后读取、解码请求体，进入后续准入与创建流程；这些步骤中的错误可能使请求提前结束。</p>
 <div class="tip"><b>串起来：</b>Pod 存储实现 → 资源映射 → 路由安装逻辑 → 绑定处理函数 → 等待请求 → 匹配后执行。前三步发生在启动时，最后一步发生在请求到达时。</div>
 <p class="muted">路径对应：<code>pkg/controlplane/instance.go</code>；<code>pkg/registry/core/rest/storage_core.go</code>；其余文件分别位于 <code>staging/src/k8s.io/apiserver/pkg/server/genericapiserver.go</code>、<code>.../endpoints/groupversion.go</code>、<code>.../endpoints/installer.go</code>。</p>
 <h3>第二段：请求到达后执行闭包</h3><pre>POST /api/v1/namespaces/default/pods
