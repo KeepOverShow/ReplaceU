@@ -51,6 +51,12 @@ route := ws.POST(action.Path).To(handler)</pre><p>上面是按源码顺序展示
         handlers.CreateResource(r, &amp;scope, admit)(res.ResponseWriter, req.Request)
     }
 }</pre><p><code>return func(...)</code> 返回的是一个函数；它记住了 <code>r</code>、<code>scope</code> 和 <code>admit</code>，因此叫闭包。启动时先构造闭包、经过包装后绑定到路由；函数体里的创建处理此时尚未执行。源码：<code>staging/src/k8s.io/apiserver/pkg/endpoints/installer.go:901–910, 1278–1281</code>。</p>
+<div style="border-left:2px solid #b8d9d2;padding-left:12px;margin:16px 0"><h6 style="font-size:15px;color:#075e51;margin:12px 0 6px">深入：为什么这里使用闭包？</h6><p>因为两组参数在不同时间出现，路由框架需要一个接收本次请求和响应的处理函数。</p><p><b>启动时已经确定：</b><code>r</code> 是该资源的创建实现，<code>scope</code> 是请求处理信息，<code>admit</code> 是准入处理器。调用 <code>restfulCreateResource(r, scope, admit)</code> 时，闭包捕获这些变量；经过包装后绑定到路由。</p><p><b>请求到达时才提供：</b>路由框架调用处理函数，传入本次 <code>req</code> 和 <code>res</code>。闭包将它们与捕获的依赖一起交给创建处理逻辑。</p><pre>启动时：r、scope、admit ──┐
+                          ├─→ 创建处理逻辑
+请求时：req、res ─────────┘</pre><p><b>普通函数可以吗？</b>可以。只是路由接口需要形如 <code>func(req, res)</code> 的处理函数，不能直接把还需要额外三个参数的函数传进去；需要适配，例如：</p><pre>// 示意代码，不是 Kubernetes 源码
+handler := func(req *restful.Request, res *restful.Response) {
+    handleCreate(req, res, creater, reqScope, admit)
+}</pre><p>这个适配函数仍是闭包。也可以将依赖保存到结构体中，注册签名匹配的绑定方法；闭包不是唯一方案。关键是让启动时确定的依赖，在每次请求到来时仍可使用。</p></div>
 <h5 style="font-size:15px;line-height:1.5;color:#203339;margin:18px 0 6px">④ 请求到达后再执行。</h5><p>例如 <code>POST /api/v1/namespaces/default/pods</code> 通过前置处理并匹配路由后，路由调用已保存的处理函数。闭包才调用 <code>handlers.CreateResource</code> 并立即执行返回的处理函数，随后读取、解码请求体，进入后续准入与创建流程；这些步骤中的错误可能使请求提前结束。</p>
 <div class="tip"><b>串起来：</b>Pod API 对象管理实现 → 资源映射 → 路由安装逻辑 → 绑定处理函数 → 等待请求 → 匹配后执行。前三步发生在启动时，最后一步发生在请求到达时。</div>
 <p class="muted">路径对应：<code>pkg/controlplane/instance.go</code>；<code>pkg/registry/core/rest/storage_core.go</code>；其余文件分别位于 <code>staging/src/k8s.io/apiserver/pkg/server/genericapiserver.go</code>、<code>.../endpoints/groupversion.go</code>、<code>.../endpoints/installer.go</code>。</p>
